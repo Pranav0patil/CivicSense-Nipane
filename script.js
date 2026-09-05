@@ -40,7 +40,7 @@ const translations = {
         locSuccess: "Location Captured! ✅",
         locError: "Failed to get location. Please allow GPS or select on map.",
         btnSubmit: "Submit Report",
-        submitting: "Submitting report...",
+        submitting: "Compressing & Submitting...",
         submitSuccess: "Complaint reported successfully! 🎉"
     },
     hi: {
@@ -64,7 +64,7 @@ const translations = {
         locSuccess: "लोकेशन दर्ज हो गई! ✅",
         locError: "लोकेशन नहीं मिल सकी। कृपया मैप पर जगह चुनें।",
         btnSubmit: "रिपोर्ट दर्ज करें",
-        submitting: "रिपोर्ट दर्ज की जा रही है...",
+        submitting: "फोटो कंप्रेस और सबमिट हो रही है...",
         submitSuccess: "आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है! 🎉"
     },
     mr: {
@@ -88,7 +88,7 @@ const translations = {
         locSuccess: "स्थान यशस्वीरित्या नोंदवले! ✅",
         locError: "स्थान मिळू शकले नाही. कृपया नकाशावर निवडा.",
         btnSubmit: "तक्रार नोंदवा",
-        submitting: "तक्रार नोंदवली जात आहे...",
+        submitting: "फोटो कॉम्प्रेस करून पाठवत आहे...",
         submitSuccess: "आपली तक्रार यशस्वीरित्या नोंदवली गेली आहे! 🎉"
     }
 };
@@ -177,13 +177,31 @@ function getLocation() {
     }
 }
 
-// Convert image to string (Base64) for free cloud storage
-function getBase64(file) {
+// Automatic Photo Compression (Reduces 5MB mobile photo to ~50KB)
+function compressPhoto(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = error => reject(error);
+        reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxWidth = 800; // Resize width to 800px max
+                const scaleSize = maxWidth / img.width;
+                canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+                canvas.height = (img.width > maxWidth) ? (img.height * scaleSize) : img.height;
+
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                // Compress quality to 70% JPEG
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
+                resolve(compressedBase64);
+            };
+            img.onerror = (err) => reject(err);
+        };
+        reader.onerror = (err) => reject(err);
     });
 }
 
@@ -210,7 +228,7 @@ document.getElementById("problemForm").addEventListener("submit", async function
 
         let photoBase64 = "";
         if (photoFile) {
-            photoBase64 = await getBase64(photoFile);
+            photoBase64 = await compressPhoto(photoFile);
         }
 
         // Firestore mein report save karna
