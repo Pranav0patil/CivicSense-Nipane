@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Smart Civic Issues</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        body {
+            background-color: #f4f6f9;
+            display: block;
+            padding: 30px 20px;
+        }
+        .admin-box {
+            max-width: 1050px;
+            margin: auto;
+            background: #ffffff;
+            padding: 25px;
+            border-radius: 12px;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.08);
+        }
+        .admin-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 2px solid #edf2f7;
+            padding-bottom: 15px;
+            margin-bottom: 20px;
+        }
+        .admin-header h1 {
+            color: #1a73e8;
+            font-size: 22px;
+        }
+        .table-responsive {
+            overflow-x: auto;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            text-align: left;
+        }
+        th, td {
+            padding: 12px 14px;
+            border-bottom: 1px solid #e2e8f0;
+            font-size: 14px;
+            vertical-align: middle;
+        }
+        th {
+            background-color: #f8fafc;
+            color: #475569;
+            font-weight: 600;
+        }
+        .issue-img {
+            width: 65px;
+            height: 65px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+        .badge {
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: bold;
+            display: inline-block;
+        }
+        .badge-Pending { background-color: #fef3c7; color: #b45309; }
+        .badge-InProgress { background-color: #e0f2fe; color: #0369a1; }
+        .badge-Resolved { background-color: #dcfce7; color: #15803d; }
+        .action-btn {
+            padding: 6px 10px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            margin: 2px 0;
+        }
+        .btn-progress { background: #0284c7; color: #fff; }
+        .btn-resolve { background: #16a34a; color: #fff; }
+        .map-link {
+            color: #2563eb;
+            text-decoration: none;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="admin-box">
+        <div class="admin-header">
+            <div>
+                <h1>🏛️ Municipal Corporation Admin Portal</h1>
+                <p style="color: #64748b; font-size: 13px;">Live Citizen Grievance Dashboard</p>
+            </div>
+            <a href="index.html" style="font-size: 14px; text-decoration: none; color: #2563eb; font-weight: 600;">+ Public Form</a>
+        </div>
+
+        <div class="table-responsive">
+            <table>
+                <thead>
+                    <tr>
+                        <th>Photo</th>
+                        <th>Category</th>
+                        <th>Description</th>
+                        <th>Location</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="reportsTable">
+                    <tr>
+                        <td colspan="6" style="text-align: center; color: #94a3b8;">Loading complaints...</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyCQHnqCtpiNfLCxmVBMhPsFfnTvAe5obG8",
+            authDomain: "smart-civic-reporter-73427.firebaseapp.com",
+            projectId: "smart-civic-reporter-73427",
+            storageBucket: "smart-civic-reporter-73427.firebasestorage.app",
+            messagingSenderId: "244215583578",
+            appId: "1:244215583578:web:350fa9987215f8eff31963"
+        };
+
+        firebase.initializeApp(firebaseConfig);
+        const db = firebase.firestore();
+
+        const tableBody = document.getElementById("reportsTable");
+
+        // Real-time listener for complaints
+        db.collection("reports").orderBy("timestamp", "desc").onSnapshot((snapshot) => {
+            tableBody.innerHTML = "";
+
+            if (snapshot.empty) {
+                tableBody.innerHTML = `<tr><td colspan="6" style="text-align:center;">Koi bhi complaint nahi mili.</td></tr>`;
+                return;
+            }
+
+            snapshot.forEach((doc) => {
+                const data = doc.data();
+                const id = doc.id;
+                const mapUrl = `https://www.google.com/maps?q=${data.latitude},${data.longitude}`;
+
+                const row = document.createElement("tr");
+                row.innerHTML = `
+                    <td>
+                        ${data.photo ? `<img src="${data.photo}" class="issue-img" alt="Report Image">` : 'No Image'}
+                    </td>
+                    <td><strong>${data.category}</strong></td>
+                    <td>${data.description}</td>
+                    <td>
+                        <a href="${mapUrl}" target="_blank" class="map-link">📍 View on Map</a>
+                    </td>
+                    <td>
+                        <span class="badge badge-${data.status.replace(/\s+/g, '')}">${data.status}</span>
+                    </td>
+                    <td>
+                        <button class="action-btn btn-progress" onclick="updateStatus('${id}', 'In Progress')">Mark In-Progress</button>
+                        <button class="action-btn btn-resolve" onclick="updateStatus('${id}', 'Resolved')">Resolve</button>
+                    </td>
+                `;
+                tableBody.appendChild(row);
+            });
+        });
+
+        // Function to update status directly in Firestore
+        function updateStatus(docId, newStatus) {
+            db.collection("reports").doc(docId).update({
+                status: newStatus
+            });
+        }
+    </script>
+</body>
+</html>

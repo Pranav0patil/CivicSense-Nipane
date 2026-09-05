@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Civic Issue Reporter</title>
+    
+    <!-- Free Leaflet Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div class="container">
+        <!-- Language Switcher -->
+        <div class="lang-container">
+            <label for="langSelect">🌐 Language:</label>
+            <select id="langSelect" onchange="changeLanguage()">
+                <option value="en">English</option>
+                <option value="hi">हिंदी (Hindi)</option>
+                <option value="mr">मराठी (Marathi)</option>
+            </select>
+        </div>
+
+        <header>
+            <h1 id="txt-title">Smart Issue Reporter</h1>
+            <p id="txt-subtitle">Report local civic issues directly to authorities</p>
+        </header>
+
+        <form id="problemForm">
+            <!-- Category -->
+            <label id="lbl-cat" for="category">Issue Category:</label>
+            <select id="category" required>
+                <option value="" id="opt-default">-- Select Issue Type --</option>
+                <option value="Road / Pothole" id="opt-road">Pothole / Damaged Road</option>
+                <option value="Garbage" id="opt-garbage">Garbage Dump</option>
+                <option value="Water Leakage" id="opt-water">Water Pipe Leakage</option>
+                <option value="Street Light" id="opt-light">Broken Street Light</option>
+                <option value="Other" id="opt-other">Other Issue</option>
+            </select>
+
+            <!-- Description -->
+            <label id="lbl-desc" for="description">Issue Description:</label>
+            <textarea id="description" rows="3" placeholder="Describe the issue in detail..." required></textarea>
+
+            <!-- Photo Upload -->
+            <label id="lbl-photo" for="photo">Upload / Click Photo:</label>
+            <input type="file" id="photo" accept="image/*" capture="environment" required>
+
+            <!-- Location Section -->
+            <label id="lbl-loc">Location (GPS or Pick on Map):</label>
+            <button type="button" id="locBtn" class="secondary-btn" onclick="getLocation()">📍 Fetch Live Location</button>
+            
+            <!-- Map Container -->
+            <div id="map"></div>
+            <p id="map-hint" class="map-hint-text">👆 Tap anywhere on map to pin problem spot</p>
+            <p id="locationStatus" class="status-text">Location not captured yet.</p>
+
+            <!-- Submit Button -->
+            <button type="submit" id="btn-submit" class="submit-btn">Submit Report</button>
+        </form>
+    </div>
+
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+    <!-- Firebase Compat SDKs (Free & Easy) -->
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+
+    <script src="script.js"></script>
+</body>
+</html>
