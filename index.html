@@ -3,68 +3,153 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Civic Issue Reporter</title>
-    
-    <!-- Free Leaflet Map CSS -->
+    <title>CivicSense - AI-Powered Civic Issue Prioritization</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <div class="container">
-        <!-- Language Switcher -->
-        <div class="lang-container">
-            <label for="langSelect">🌐 Language:</label>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="nav-brand">🏙️ CivicSense <span class="ai-badge">AI Core</span></div>
+        <div class="nav-links">
+            <button class="nav-btn active" onclick="switchTab('home')">Home</button>
+            <button class="nav-btn" onclick="switchTab('report')">Report</button>
+            <button class="nav-btn" onclick="switchTab('tracker')">Live Tracker</button>
+            <button class="nav-btn" onclick="switchTab('admin')">Admin</button>
+        </div>
+        <div class="lang-selector">
             <select id="langSelect" onchange="changeLanguage()">
                 <option value="en">English</option>
-                <option value="hi">हिंदी (Hindi)</option>
-                <option value="mr">मराठी (Marathi)</option>
+                <option value="hi">हिंदी</option>
+                <option value="mr">मराठी</option>
             </select>
         </div>
+    </nav>
 
-        <header>
-            <h1 id="txt-title">Smart Issue Reporter</h1>
-            <p id="txt-subtitle">Report local civic issues directly to authorities</p>
-        </header>
+    <main class="main-content">
 
-        <form id="problemForm">
-            <!-- Category -->
-            <label id="lbl-cat" for="category">Issue Category:</label>
-            <select id="category" required>
-                <option value="" id="opt-default">-- Select Issue Type --</option>
-                <option value="Road / Pothole" id="opt-road">Pothole / Damaged Road</option>
-                <option value="Garbage" id="opt-garbage">Garbage Dump</option>
-                <option value="Water Leakage" id="opt-water">Water Pipe Leakage</option>
-                <option value="Street Light" id="opt-light">Broken Street Light</option>
-                <option value="Other" id="opt-other">Other Issue</option>
-            </select>
+        <!-- 1. HOME SCREEN -->
+        <section id="view-home" class="view-panel active">
+            <div class="hero-card">
+                <h1 id="home-title">Intelligent Civic Grievance System</h1>
+                <p id="home-subtitle">Reporting is good, smart prioritization is better. Powered by ₹0 client-side AI analysis and geo-clustering.</p>
+                
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <h2 id="stat-total">0</h2>
+                        <span id="txt-stat-total">Total Issues</span>
+                    </div>
+                    <div class="stat-card stat-resolved">
+                        <h2 id="stat-resolved">0</h2>
+                        <span id="txt-stat-resolved">Resolved</span>
+                    </div>
+                    <div class="stat-card stat-critical">
+                        <h2 id="stat-critical">0</h2>
+                        <span id="txt-stat-critical">Critical / High</span>
+                    </div>
+                </div>
 
-            <!-- Description -->
-            <label id="lbl-desc" for="description">Issue Description:</label>
-            <textarea id="description" rows="3" placeholder="Describe the issue in detail..." required></textarea>
+                <div class="cta-row">
+                    <button class="primary-btn pulse" onclick="switchTab('report')">📢 Report an Issue Now</button>
+                </div>
+            </div>
+        </section>
 
-            <!-- Photo Upload -->
-            <label id="lbl-photo" for="photo">Upload / Click Photo:</label>
-            <input type="file" id="photo" accept="image/*" capture="environment" required>
+        <!-- 2. REPORT SCREEN (AI FORM) -->
+        <section id="view-report" class="view-panel">
+            <div class="form-container">
+                <h2 id="form-heading">Report Civic Issue</h2>
+                <form id="civicForm">
+                    <label id="lbl-cat" for="category">Issue Category</label>
+                    <select id="category" required onchange="triggerAiAnalysis()">
+                        <option value="">-- Select Category --</option>
+                        <option value="Road / Pothole">Pothole / Broken Road</option>
+                        <option value="Garbage">Garbage Dump / Sanitation</option>
+                        <option value="Water Leakage">Water Pipe Leakage</option>
+                        <option value="Street Light">Broken Street Light / Electrical</option>
+                        <option value="Sewage Overflow">Sewage / Drain Overflow</option>
+                        <option value="Other">Other Problem</option>
+                    </select>
 
-            <!-- Location Section -->
-            <label id="lbl-loc">Location (GPS or Pick on Map):</label>
-            <button type="button" id="locBtn" class="secondary-btn" onclick="getLocation()">📍 Fetch Live Location</button>
-            
-            <!-- Map Container -->
-            <div id="map"></div>
-            <p id="map-hint" class="map-hint-text">👆 Tap anywhere on map to pin problem spot</p>
-            <p id="locationStatus" class="status-text">Location not captured yet.</p>
+                    <label id="lbl-desc" for="description">Problem Description</label>
+                    <textarea id="description" rows="3" placeholder="Describe issue (e.g. broken wire sparking, accident hazard)..." required oninput="triggerAiAnalysis()"></textarea>
 
-            <!-- Submit Button -->
-            <button type="submit" id="btn-submit" class="submit-btn">Submit Report</button>
-        </form>
-    </div>
+                    <!-- Real-Time AI Meter -->
+                    <div class="ai-preview-box">
+                        <div class="ai-meter-header">
+                            <span>🤖 Real-Time AI Analysis Preview:</span>
+                            <span id="aiPriorityBadge" class="p-badge p-low">LOW (Score: 20)</span>
+                        </div>
+                        <p id="aiExplanation" class="ai-hint">Type details to run real-time severity estimation.</p>
+                    </div>
 
-    <!-- Leaflet JS -->
+                    <label id="lbl-photo" for="photo">Upload / Capture Image</label>
+                    <input type="file" id="photo" accept="image/*" capture="environment" required>
+
+                    <label id="lbl-loc">Location Tagging</label>
+                    <button type="button" class="loc-btn" onclick="fetchLiveLocation()">📍 Detect Live GPS Location</button>
+                    <div id="reportMap" class="map-box"></div>
+                    <p id="locationFeedback" class="status-msg">Location pending.</p>
+
+                    <button type="submit" id="submitBtn" class="submit-action-btn">Submit to CivicSense Engine</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 3. PUBLIC TRACKER SCREEN -->
+        <section id="view-tracker" class="view-panel">
+            <div class="tracker-container">
+                <h2>Live Public Issue Tracker</h2>
+                <div id="trackerMap" class="map-box-large"></div>
+                <div class="tracker-list-header">Active Grievances in your area:</div>
+                <div id="publicReportsList" class="cards-grid">
+                    <p class="placeholder-text">Loading verified grievances...</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- 4. ADMIN DASHBOARD SCREEN -->
+        <section id="view-admin" class="view-panel">
+            <div class="admin-wrapper">
+                <div class="admin-title-row">
+                    <h2>Municipal Officer Command Dashboard</h2>
+                    <div class="admin-filters">
+                        <label>Filter by Severity:</label>
+                        <select id="priorityFilter" onchange="filterAdminTable()">
+                            <option value="ALL">All Priorities</option>
+                            <option value="HIGH">🔴 High Priority Only</option>
+                            <option value="MEDIUM">🟡 Medium Priority</option>
+                            <option value="LOW">🟢 Low Priority</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="table-container">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th>Photo</th>
+                                <th>Category & Details</th>
+                                <th>AI Severity</th>
+                                <th>Geo-Cluster</th>
+                                <th>Location</th>
+                                <th>Status</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="adminTableBody">
+                            <tr><td colspan="7" style="text-align: center;">Loading records...</td></tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Dependencies -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-
-    <!-- Firebase Compat SDKs (Free & Easy) -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
