@@ -3,20 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicSense - AI-Powered Civic Issue Prioritization</title>
+    <title>CivicSense - AI-Powered Civic Issue Reporting</title>
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Navigation Bar -->
+    <!-- Navigation Bar (Public Only) -->
     <nav class="navbar">
         <div class="nav-brand">🏙️ CivicSense <span class="ai-badge">AI Core</span></div>
         <div class="nav-links">
             <button class="nav-btn active" onclick="switchTab('home')">Home</button>
             <button class="nav-btn" onclick="switchTab('report')">Report</button>
             <button class="nav-btn" onclick="switchTab('tracker')">Live Tracker</button>
-            <button class="nav-btn" onclick="switchTab('admin')">Admin</button>
         </div>
         <div class="lang-selector">
             <select id="langSelect" onchange="changeLanguage()">
@@ -33,7 +32,7 @@
         <section id="view-home" class="view-panel active">
             <div class="hero-card">
                 <h1 id="home-title">Intelligent Civic Grievance System</h1>
-                <p id="home-subtitle">Reporting is good, smart prioritization is better. Powered by ₹0 client-side AI analysis and geo-clustering.</p>
+                <p id="home-subtitle">Zero-delay local reporting with automated AI severity scoring & geo-duplicate detection.</p>
                 
                 <div class="stats-grid">
                     <div class="stat-card">
@@ -78,10 +77,10 @@
                     <!-- Real-Time AI Meter -->
                     <div class="ai-preview-box">
                         <div class="ai-meter-header">
-                            <span>🤖 Real-Time AI Analysis Preview:</span>
+                            <span>🤖 AI Severity Preview:</span>
                             <span id="aiPriorityBadge" class="p-badge p-low">LOW (Score: 20)</span>
                         </div>
-                        <p id="aiExplanation" class="ai-hint">Type details to run real-time severity estimation.</p>
+                        <p id="aiExplanation" class="ai-hint">AI scans description to dynamically calculate urgency score.</p>
                     </div>
 
                     <label id="lbl-photo" for="photo">Upload / Capture Image</label>
@@ -101,52 +100,17 @@
         <section id="view-tracker" class="view-panel">
             <div class="tracker-container">
                 <h2>Live Public Issue Tracker</h2>
+                <p style="color: #64748b; font-size: 13px; margin-top: 4px;">Click on any marker to see status & AI priority.</p>
                 <div id="trackerMap" class="map-box-large"></div>
-                <div class="tracker-list-header">Active Grievances in your area:</div>
-                <div id="publicReportsList" class="cards-grid">
-                    <p class="placeholder-text">Loading verified grievances...</p>
-                </div>
-            </div>
-        </section>
-
-        <!-- 4. ADMIN DASHBOARD SCREEN -->
-        <section id="view-admin" class="view-panel">
-            <div class="admin-wrapper">
-                <div class="admin-title-row">
-                    <h2>Municipal Officer Command Dashboard</h2>
-                    <div class="admin-filters">
-                        <label>Filter by Severity:</label>
-                        <select id="priorityFilter" onchange="filterAdminTable()">
-                            <option value="ALL">All Priorities</option>
-                            <option value="HIGH">🔴 High Priority Only</option>
-                            <option value="MEDIUM">🟡 Medium Priority</option>
-                            <option value="LOW">🟢 Low Priority</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="table-container">
-                    <table>
-                        <thead>
-                            <tr>
-                                <th>Photo</th>
-                                <th>Category & Details</th>
-                                <th>AI Severity</th>
-                                <th>Geo-Cluster</th>
-                                <th>Location</th>
-                                <th>Status</th>
-                                <th>Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="adminTableBody">
-                            <tr><td colspan="7" style="text-align: center;">Loading records...</td></tr>
-                        </tbody>
-                    </table>
-                </div>
             </div>
         </section>
 
     </main>
+
+    <!-- Footer with discreet portal link -->
+    <footer style="text-align: center; padding: 25px 0; color: #94a3b8; font-size: 12px;">
+        CivicSense Platform • INSPIRE Award Innovation • <a href="admin.html" style="color: #94a3b8; text-decoration: none;">Authorized Portal</a>
+    </footer>
 
     <!-- Dependencies -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
