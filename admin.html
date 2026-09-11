@@ -3,156 +3,126 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicSense - Municipal Officer Command Portal</title>
+    <title>CivicSense-Nipane Grampanchayat Admin Portal</title>
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%232563eb'/%3E%3Cpath d='M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z' fill='%23ffffff'/%3E%3Ccircle cx='60' cy='52' r='12' fill='%232563eb'/%3E%3Ccircle cx='60' cy='52' r='6' fill='%2338bdf8'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="style.css">
     <style>
-        body { background: #f1f5f9; padding: 20px; }
-        .admin-page { max-width: 1200px; margin: 0 auto; background: #fff; padding: 24px; border-radius: 14px; box-shadow: 0 4px 20px rgba(0,0,0,0.06); }
-        .admin-top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #e2e8f0; padding-bottom: 16px; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
-        .admin-title h1 { font-size: 20px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
-        .admin-controls { display: flex; gap: 12px; align-items: center; }
-        .filter-select { padding: 8px 12px; border-radius: 8px; border: 1px solid #cbd5e1; font-weight: 600; font-size: 13px; }
-        .stat-badges { display: flex; gap: 10px; margin-bottom: 20px; }
-        .stat-badge { padding: 8px 16px; border-radius: 8px; font-weight: 600; font-size: 13px; }
-        .sb-high { background: #fee2e2; color: #991b1b; }
-        .sb-med { background: #fef3c7; color: #92400e; }
-        .sb-low { background: #dcfce7; color: #166534; }
+        .admin-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
+        .creator-badge {
+            background: #f8fafc;
+            border: 1px solid #cbd5e1;
+            padding: 8px 14px;
+            border-radius: 10px;
+            text-align: right;
+            font-size: 13px;
+        }
+        .creator-badge .creator-title {
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .creator-badge .creator-name {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .creator-badge a {
+            color: #e1306c;
+            text-decoration: none;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+        .creator-badge a:hover {
+            text-decoration: underline;
+        }
     </style>
 </head>
-<body>
+<body style="background: #f1f5f9; padding: 20px;">
 
-    <div class="admin-page">
-        <div class="admin-top-bar">
-            <div class="admin-title">
-                <h1>🏛️ Municipal Corporation Command Portal</h1>
-                <span style="font-size: 12px; color: #64748b;">AI-Prioritized Citizen Grievances</span>
+    <div style="max-width: 1200px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        
+        <!-- Updated Header with Localized Title & Creator Tag -->
+        <div class="admin-header-flex">
+            <div>
+                <h1 style="margin: 0; font-size: 22px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <svg width="26" height="26" viewBox="0 0 120 120">
+                        <rect width="120" height="120" rx="28" fill="#2563eb"/>
+                        <path d="M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z" fill="#ffffff"/>
+                        <circle cx="60" cy="52" r="12" fill="#2563eb"/>
+                        <circle cx="60" cy="52" r="6" fill="#38bdf8"/>
+                    </svg>
+                    CivicSense-Nipane Grampanchayat Admin Portal
+                </h1>
+                <p style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Real-Time Citizen Grievance & AI Prioritization Console</p>
             </div>
-            <div class="admin-controls">
-                <select id="priorityFilter" class="filter-select" onchange="filterAdminTable()">
-                    <option value="ALL">All Priorities</option>
-                    <option value="HIGH">🔴 High Priority Only</option>
-                    <option value="MEDIUM">🟡 Medium Priority</option>
-                    <option value="LOW">🟢 Low Priority</option>
-                </select>
-                <a href="index.html" style="font-size: 13px; font-weight: 600; color: #2563eb; text-decoration: none;">← Public App</a>
+
+            <!-- Top Right: Creator Profile & Navigation -->
+            <div style="display: flex; align-items: center; gap: 15px;">
+                <div class="creator-badge">
+                    <div class="creator-title">System Architect & Lead</div>
+                    <div class="creator-name">Pranav Patil</div>
+                    <a href="https://instagram.com/pranav__jagtap.0001" target="_blank" rel="noopener noreferrer">
+                        📸 @pranav__jagtap.0001
+                    </a>
+                </div>
+                <div style="display: flex; flex-direction: column; align-items: flex-end; gap: 6px;">
+                    <select id="priorityFilter" onchange="filterAdminTable()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                        <option value="All">All Priorities</option>
+                        <option value="CRITICAL">Critical Only</option>
+                        <option value="HIGH">High Only</option>
+                        <option value="MEDIUM">Medium Only</option>
+                        <option value="LOW">Low Only</option>
+                    </select>
+                    <a href="index.html" style="font-size: 12px; color: #2563eb; text-decoration: none; font-weight: 600;">← Open Public App</a>
+                </div>
             </div>
         </div>
 
-        <div class="stat-badges">
-            <div class="stat-badge sb-high" id="badge-high">High: 0</div>
-            <div class="stat-badge sb-med" id="badge-med">Medium: 0</div>
-            <div class="stat-badge sb-low" id="badge-low">Low: 0</div>
+        <!-- Metric Badges -->
+        <div style="display: flex; gap: 12px; margin-bottom: 20px;">
+            <span style="background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeUrgent">🔴 High Urgency: 0</span>
+            <span style="background: #fef9c3; color: #ca8a04; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeMedium">🟡 Medium: 0</span>
+            <span style="background: #dcfce7; color: #16a34a; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeLow">🟢 Low: 0</span>
         </div>
 
-        <div class="table-container">
-            <table>
+        <!-- Issue Directory Table -->
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
                 <thead>
-                    <tr>
-                        <th>Photo</th>
-                        <th>Category & Description</th>
-                        <th>AI Priority</th>
-                        <th>Geo-Cluster Alert</th>
-                        <th>Map</th>
-                        <th>Status</th>
-                        <th>Action</th>
+                    <tr style="border-bottom: 2px solid #e2e8f0; color: #475569; background: #f8fafc;">
+                        <th style="padding: 12px;">Photo</th>
+                        <th style="padding: 12px;">Category & Description</th>
+                        <th style="padding: 12px;">AI Priority</th>
+                        <th style="padding: 12px;">Geo-Cluster Alert</th>
+                        <th style="padding: 12px;">Map</th>
+                        <th style="padding: 12px;">Status</th>
+                        <th style="padding: 12px;">Action</th>
                     </tr>
                 </thead>
                 <tbody id="adminTableBody">
-                    <tr><td colspan="7" style="text-align: center;">Loading real-time data...</td></tr>
+                    <!-- Dynamic Reports Injected via script.js -->
                 </tbody>
             </table>
         </div>
+
     </div>
 
-    <!-- Firebase SDKs -->
+    <!-- Firebase Dependencies -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
 
-    <script>
-        const firebaseConfig = {
-            apiKey: "AIzaSyCQHnqCtpiNfLCxmVBMhPsFfnTvAe5obG8",
-            authDomain: "smart-civic-reporter-73427.firebaseapp.com",
-            projectId: "smart-civic-reporter-73427",
-            storageBucket: "smart-civic-reporter-73427.firebasestorage.app",
-            messagingSenderId: "244215583578",
-            appId: "1:244215583578:web:350fa9987215f8eff31963"
-        };
-
-        firebase.initializeApp(firebaseConfig);
-        const db = firebase.firestore();
-
-        let allReports = [];
-
-        db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
-            allReports = [];
-            let high = 0, med = 0, low = 0;
-
-            snapshot.forEach(doc => {
-                const data = doc.data();
-                data.id = doc.id;
-                allReports.push(data);
-
-                if (data.priorityLevel === "HIGH") high++;
-                else if (data.priorityLevel === "MEDIUM") med++;
-                else low++;
-            });
-
-            document.getElementById('badge-high').innerText = `🔴 High Urgency: ${high}`;
-            document.getElementById('badge-med').innerText = `🟡 Medium: ${med}`;
-            document.getElementById('badge-low').innerText = `🟢 Low: ${low}`;
-
-            renderTable(allReports);
-        });
-
-        function renderTable(reports) {
-            const tbody = document.getElementById('adminTableBody');
-            tbody.innerHTML = "";
-
-            if (reports.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: #94a3b8;">No records found.</td></tr>`;
-                return;
-            }
-
-            reports.forEach(r => {
-                const badgeClass = r.priorityLevel === 'HIGH' ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
-                const clusterHtml = r.clusterCount > 1 
-                    ? `<span class="cluster-tag">⚠️ ${r.clusterCount} Reports in 100m</span>` 
-                    : `<span style="color:#94a3b8; font-size:11px;">Isolated</span>`;
-                const mapLink = `https://www.google.com/maps?q=${r.latitude},${r.longitude}`;
-
-                const tr = document.createElement('tr');
-                tr.innerHTML = `
-                    <td><img src="${r.photo}" class="admin-thumb" alt="Issue"/></td>
-                    <td><strong>${r.category}</strong><br><small style="color:#64748b;">${r.description}</small></td>
-                    <td><span class="p-badge ${badgeClass}">${r.priorityLevel || 'LOW'} (${r.priorityScore || 20})</span></td>
-                    <td>${clusterHtml}</td>
-                    <td><a href="${mapLink}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600;">📍 Open Map</a></td>
-                    <td><strong>${r.status}</strong></td>
-                    <td>
-                        <button class="btn-status btn-prog" onclick="updateDocStatus('${r.id}', 'In Progress')">Progress</button>
-                        <button class="btn-status btn-res" onclick="updateDocStatus('${r.id}', 'Resolved')">Resolve</button>
-                        <button class="btn-status" style="background:#fee2e2; color:#991b1b; margin-top:2px;" onclick="deleteDoc('${r.id}')">Delete</button>
-                    </td>
-                `;
-                tbody.appendChild(tr);
-            });
-        }
-
-        function updateDocStatus(id, newStatus) {
-            db.collection("reports").doc(id).update({ status: newStatus });
-        }
-
-        function deleteDoc(id) {
-            if (confirm("Are you sure you want to delete this report?")) {
-                db.collection("reports").doc(id).delete();
-            }
-        }
-
-        function filterAdminTable() {
-            const filter = document.getElementById('priorityFilter').value;
-            if (filter === "ALL") renderTable(allReports);
-            else renderTable(allReports.filter(r => r.priorityLevel === filter));
-        }
-    </script>
+    <script src="script.js"></script>
 </body>
 </html>
