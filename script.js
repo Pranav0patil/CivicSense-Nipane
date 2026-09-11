@@ -20,17 +20,18 @@ let globalReports = [];
 const CRITICAL_KEYWORDS = ["accident", "danger", "spark", "fire", "wire", "burst", "overflow", "death", "deep", "emergency", "current", "hospital", "school", "खतरा", "दुर्घटना", "तार", "आग", "गंभीर"];
 const MEDIUM_KEYWORDS = ["leak", "garbage", "smell", "block", "light", "pothole", "कचरा", "दुर्गंध", "खड्डा", "गळती"];
 
-// 1. Navigation Controller
+// 1. Navigation Controller (Public App)
 function switchTab(viewId) {
     document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
     document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
     
-    document.getElementById(`view-${viewId}`).classList.add('active');
+    const targetView = document.getElementById(`view-${viewId}`);
+    if (targetView) targetView.classList.add('active');
     event?.target?.classList?.add('active');
 
-    if (viewId === 'report') {
+    if (viewId === 'report' && reportMap) {
         setTimeout(() => { reportMap.invalidateSize(); }, 300);
-    } else if (viewId === 'tracker') {
+    } else if (viewId === 'tracker' && trackerMap) {
         setTimeout(() => { 
             trackerMap.invalidateSize();
             renderTrackerMarkers();
@@ -38,27 +39,40 @@ function switchTab(viewId) {
     }
 }
 
-// 2. Maps Setup
+// 2. Maps Setup (Only on Public Page)
 function initMaps() {
-    reportMap = L.map('reportMap').setView([20.8149, 75.3545], 14);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(reportMap);
+    const reportMapEl = document.getElementById('reportMap');
+    const trackerMapEl = document.getElementById('trackerMap');
 
-    reportMap.on('click', (e) => {
-        setReportLocation(e.latlng.lat, e.latlng.lng);
-    });
+    if (reportMapEl) {
+        reportMap = L.map('reportMap').setView([20.8149, 75.3545], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(reportMap);
 
-    trackerMap = L.map('trackerMap').setView([20.8149, 75.3545], 13);
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(trackerMap);
+        reportMap.on('click', (e) => {
+            setReportLocation(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    if (trackerMapEl) {
+        trackerMap = L.map('trackerMap').setView([20.8149, 75.3545], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(trackerMap);
+    }
 }
 
 function setReportLocation(lat, lng) {
     userLocation.latitude = lat;
     userLocation.longitude = lng;
-    if (reportMarker) reportMarker.setLatLng([lat, lng]);
-    else reportMarker = L.marker([lat, lng]).addTo(reportMap);
+    if (reportMarker) {
+        reportMarker.setLatLng([lat, lng]);
+    } else if (reportMap) {
+        reportMarker = L.marker([lat, lng]).addTo(reportMap);
+    }
 
-    document.getElementById('locationFeedback').innerText = `Location Pinned: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
-    document.getElementById('locationFeedback').style.color = "#16a34a";
+    const feedback = document.getElementById('locationFeedback');
+    if (feedback) {
+        feedback.innerText = `Location Pinned: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        feedback.style.color = "#16a34a";
+    }
     triggerAiAnalysis();
 }
 
@@ -67,7 +81,7 @@ function fetchLiveLocation() {
         navigator.geolocation.getCurrentPosition(pos => {
             const lat = pos.coords.latitude;
             const lng = pos.coords.longitude;
-            reportMap.setView([lat, lng], 16);
+            if (reportMap) reportMap.setView([lat, lng], 16);
             setReportLocation(lat, lng);
         }, () => alert("Enable GPS permission or pin spot manually on map."));
     }
@@ -75,10 +89,9 @@ function fetchLiveLocation() {
 
 // 3. ZERO-COST AI PRIORITY & CLUSTERING LOGIC
 function calculatePriorityScore(category, text) {
-    let score = 20; // baseline
+    let score = 20;
     let reasons = [];
 
-    // Category weighting
     if (category === "Sewage Overflow" || category === "Street Light") {
         score += 25;
         reasons.push("Public health/safety category");
@@ -87,7 +100,6 @@ function calculatePriorityScore(category, text) {
         reasons.push("Traffic disruption category");
     }
 
-    // Keyword NLP Scan
     const lowerText = (text || "").toLowerCase();
     let criticalHits = CRITICAL_KEYWORDS.filter(w => lowerText.includes(w));
     let medHits = MEDIUM_KEYWORDS.filter(w => lowerText.includes(w));
@@ -116,18 +128,20 @@ function calculatePriorityScore(category, text) {
 }
 
 function triggerAiAnalysis() {
-    const cat = document.getElementById("category").value;
-    const desc = document.getElementById("description").value;
+    const catEl = document.getElementById("category");
+    const descEl = document.getElementById("description");
     const badge = document.getElementById("aiPriorityBadge");
     const exp = document.getElementById("aiExplanation");
 
-    const analysis = calculatePriorityScore(cat, desc);
+    if (!catEl || !descEl || !badge || !exp) return;
+
+    const analysis = calculatePriorityScore(catEl.value, descEl.value);
     badge.className = `p-badge ${analysis.badgeClass}`;
     badge.innerText = `${analysis.level} (Score: ${analysis.score})`;
     exp.innerText = analysis.explanation;
 }
 
-// Haversine formula: calculate distance between 2 coordinates in meters
+// Haversine formula
 function getDistanceMeters(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
@@ -163,72 +177,72 @@ function compressPhoto(file) {
     });
 }
 
-// 5. Submit Handler
-document.getElementById('civicForm').addEventListener('submit', async (e) => {
-    e.preventDefault();
-    if (!userLocation.latitude) {
-        alert("Please set issue location on the map.");
-        return;
-    }
-
-    const submitBtn = document.getElementById('submitBtn');
-    submitBtn.innerText = "Analyzing & Syncing...";
-    submitBtn.disabled = true;
-
-    try {
-        const cat = document.getElementById('category').value;
-        const desc = document.getElementById('description').value;
-        const photoFile = document.getElementById('photo').files[0];
-        const compressedBase64 = await compressPhoto(photoFile);
-
-        // Run AI Score
-        const aiResult = calculatePriorityScore(cat, desc);
-
-        // Check Duplicate Cluster within 100 meters
-        let clusterCount = 1;
-        globalReports.forEach(r => {
-            if (r.category === cat && r.status !== 'Resolved') {
-                const d = getDistanceMeters(userLocation.latitude, userLocation.longitude, r.latitude, r.longitude);
-                if (d <= 100) clusterCount++;
-            }
-        });
-
-        // Boost priority if multiple reports from same 100m zone
-        if (clusterCount > 1) {
-            aiResult.score = Math.min(aiResult.score + 25, 100);
-            if (aiResult.score >= 60) aiResult.level = "HIGH";
+// 5. Submit Handler (Safe Check for Public Page)
+const civicForm = document.getElementById('civicForm');
+if (civicForm) {
+    civicForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        if (!userLocation.latitude) {
+            alert("Please set issue location on the map.");
+            return;
         }
 
-        await db.collection("reports").add({
-            category: cat,
-            description: desc,
-            photo: compressedBase64,
-            latitude: userLocation.latitude,
-            longitude: userLocation.longitude,
-            priorityScore: aiResult.score,
-            priorityLevel: aiResult.level,
-            clusterCount: clusterCount,
-            status: "Pending",
-            timestamp: firebase.firestore.FieldValue.serverTimestamp()
-        });
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "Analyzing & Syncing...";
+        submitBtn.disabled = true;
 
-        alert(`Complaint lodged successfully!\nAI Assigned Priority: ${aiResult.level}`);
-        document.getElementById('civicForm').reset();
-        userLocation = { latitude: null, longitude: null };
-        if (reportMarker) reportMap.removeLayer(reportMarker);
-        switchTab('home');
-    } catch (err) {
-        alert("Submission failed: " + err.message);
-    } finally {
-        submitBtn.innerText = "Submit to CivicSense Engine";
-        submitBtn.disabled = false;
-    }
-});
+        try {
+            const cat = document.getElementById('category').value;
+            const desc = document.getElementById('description').value;
+            const photoFile = document.getElementById('photo').files[0];
+            const compressedBase64 = await compressPhoto(photoFile);
+
+            const aiResult = calculatePriorityScore(cat, desc);
+
+            let clusterCount = 1;
+            globalReports.forEach(r => {
+                if (r.category === cat && r.status !== 'Resolved') {
+                    const d = getDistanceMeters(userLocation.latitude, userLocation.longitude, r.latitude, r.longitude);
+                    if (d <= 100) clusterCount++;
+                }
+            });
+
+            if (clusterCount > 1) {
+                aiResult.score = Math.min(aiResult.score + 25, 100);
+                if (aiResult.score >= 60) aiResult.level = "HIGH";
+            }
+
+            await db.collection("reports").add({
+                category: cat,
+                description: desc,
+                photo: compressedBase64,
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+                priorityScore: aiResult.score,
+                priorityLevel: aiResult.level,
+                clusterCount: clusterCount,
+                status: "Pending",
+                timestamp: firebase.firestore.FieldValue.serverTimestamp()
+            });
+
+            alert(`Complaint lodged successfully!\nAI Assigned Priority: ${aiResult.level}`);
+            civicForm.reset();
+            userLocation = { latitude: null, longitude: null };
+            if (reportMarker && reportMap) reportMap.removeLayer(reportMarker);
+            switchTab('home');
+        } catch (err) {
+            alert("Submission failed: " + err.message);
+        } finally {
+            submitBtn.innerText = "Submit to CivicSense Engine";
+            submitBtn.disabled = false;
+        }
+    });
+}
 
 // 6. Real-Time Data Sync & Dashboard Engine
 db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     globalReports = [];
-    let total = 0, resolved = 0, critical = 0;
+    let total = 0, resolved = 0, critical = 0, medium = 0, low = 0;
 
     snapshot.forEach(doc => {
         const data = doc.data();
@@ -237,42 +251,64 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
 
         total++;
         if (data.status === "Resolved") resolved++;
-        if (data.priorityLevel === "HIGH") critical++;
+        if (data.priorityLevel === "HIGH" || data.priorityLevel === "CRITICAL") critical++;
+        else if (data.priorityLevel === "MEDIUM") medium++;
+        else low++;
     });
 
-    // Update Counter Cards
-    document.getElementById('stat-total').innerText = total;
-    document.getElementById('stat-resolved').innerText = resolved;
-    document.getElementById('stat-critical').innerText = critical;
+    // Public Home Stats Safe Update
+    const statTotal = document.getElementById('stat-total');
+    const statResolved = document.getElementById('stat-resolved');
+    const statCritical = document.getElementById('stat-critical');
+    if (statTotal) statTotal.innerText = total;
+    if (statResolved) statResolved.innerText = resolved;
+    if (statCritical) statCritical.innerText = critical;
 
-    renderAdminTable(globalReports);
+    // Admin Badges Safe Update
+    const bUrgent = document.getElementById('badgeUrgent');
+    const bMedium = document.getElementById('badgeMedium');
+    const bLow = document.getElementById('badgeLow');
+    if (bUrgent) bUrgent.innerText = `🔴 High Urgency: ${critical}`;
+    if (bMedium) bMedium.innerText = `🟡 Medium: ${medium}`;
+    if (bLow) bLow.innerText = `🟢 Low: ${low}`;
+
+    // Render Views
+    if (document.getElementById('adminTableBody')) {
+        renderAdminTable(globalReports);
+    }
+    if (trackerMap) {
+        renderTrackerMarkers();
+    }
 });
 
 function renderAdminTable(reports) {
     const tbody = document.getElementById('adminTableBody');
+    if (!tbody) return;
     tbody.innerHTML = "";
 
     if (reports.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No issues logged yet.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; padding: 20px; color: #64748b;">No issues logged yet.</td></tr>`;
         return;
     }
 
     reports.forEach(r => {
-        const badgeColor = r.priorityLevel === 'HIGH' ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
+        const badgeColor = (r.priorityLevel === 'HIGH' || r.priorityLevel === 'CRITICAL') ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
         const clusterHtml = r.clusterCount > 1 ? `<span class="cluster-tag">⚠️ ${r.clusterCount} Reports Nearby</span>` : `<span style="color:#94a3b8; font-size:11px;">Single Report</span>`;
         const mapLink = `https://www.google.com/maps?q=${r.latitude},${r.longitude}`;
 
         const tr = document.createElement('tr');
+        tr.style.borderBottom = "1px solid #f1f5f9";
         tr.innerHTML = `
-            <td><img src="${r.photo}" class="admin-thumb" alt="Issue"/></td>
-            <td><strong>${r.category}</strong><br><small style="color:#64748b;">${r.description}</small></td>
-            <td><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
-            <td>${clusterHtml}</td>
-            <td><a href="${mapLink}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600;">📍 Map Link</a></td>
-            <td><strong>${r.status}</strong></td>
-            <td>
-                <button class="btn-status btn-prog" onclick="updateDocStatus('${r.id}', 'In Progress')">Progress</button>
-                <button class="btn-status btn-res" onclick="updateDocStatus('${r.id}', 'Resolved')">Resolve</button>
+            <td style="padding: 10px;"><img src="${r.photo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" alt="Issue"/></td>
+            <td style="padding: 10px;"><strong>${r.category}</strong><br><small style="color:#64748b;">${r.description || ''}</small></td>
+            <td style="padding: 10px;"><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
+            <td style="padding: 10px;">${clusterHtml}</td>
+            <td style="padding: 10px;"><a href="${mapLink}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600;">📍 Open Map</a></td>
+            <td style="padding: 10px;"><strong>${r.status}</strong></td>
+            <td style="padding: 10px;">
+                <button style="background:#0284c7; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:4px;" onclick="updateDocStatus('${r.id}', 'In Progress')">Progress</button>
+                <button style="background:#16a34a; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px; margin-right:4px;" onclick="updateDocStatus('${r.id}', 'Resolved')">Resolve</button>
+                <button style="background:#ef4444; color:#fff; border:none; padding:5px 10px; border-radius:4px; cursor:pointer; font-size:12px;" onclick="deleteDocReport('${r.id}')">Delete</button>
             </td>
         `;
         tbody.appendChild(tr);
@@ -283,13 +319,22 @@ function updateDocStatus(id, newStatus) {
     db.collection("reports").doc(id).update({ status: newStatus });
 }
 
+function deleteDocReport(id) {
+    if (confirm("Are you sure you want to delete this grievance report?")) {
+        db.collection("reports").doc(id).delete();
+    }
+}
+
 function filterAdminTable() {
-    const filter = document.getElementById('priorityFilter').value;
-    if (filter === "ALL") renderAdminTable(globalReports);
+    const filterEl = document.getElementById('priorityFilter');
+    if (!filterEl) return;
+    const filter = filterEl.value;
+    if (filter === "All") renderAdminTable(globalReports);
     else renderAdminTable(globalReports.filter(r => r.priorityLevel === filter));
 }
 
 function renderTrackerMarkers() {
+    if (!trackerMap) return;
     globalReports.forEach(r => {
         if (r.latitude && r.longitude) {
             L.marker([r.latitude, r.longitude])
@@ -299,9 +344,8 @@ function renderTrackerMarkers() {
     });
 }
 
-// Translations dictionary
 function changeLanguage() {
-    // Localization logic for EN/HI/MR
+    // Multi-language switch handler
 }
 
 window.onload = initMaps;
