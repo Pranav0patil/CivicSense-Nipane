@@ -1,4 +1,4 @@
-// Firebase Configuration
+// Firebase Init
 const firebaseConfig = {
   apiKey: "AIzaSyCQHnqCtpiNfLCxmVBMhPsFfnTvAe5obG8",
   authDomain: "smart-civic-reporter-73427.firebaseapp.com",
@@ -8,253 +8,300 @@ const firebaseConfig = {
   appId: "1:244215583578:web:350fa9987215f8eff31963"
 };
 
-// Initialize Firebase
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 
-let userLocation = {
-    latitude: null,
-    longitude: null
-};
+let userLocation = { latitude: null, longitude: null };
+let reportMap, trackerMap;
+let reportMarker = null;
+let globalReports = [];
 
-// Translations
-const translations = {
-    en: {
-        title: "Smart Issue Reporter",
-        subtitle: "Report local civic issues directly to authorities",
-        lblCat: "Issue Category:",
-        optDefault: "-- Select Issue Type --",
-        optRoad: "Pothole / Damaged Road",
-        optGarbage: "Garbage Dump",
-        optWater: "Water Pipe Leakage",
-        optLight: "Broken Street Light",
-        optOther: "Other Issue",
-        lblDesc: "Issue Description:",
-        placeholderDesc: "Describe the issue in detail...",
-        lblPhoto: "Upload / Click Photo:",
-        lblLoc: "Location (GPS or Pick on Map):",
-        btnLoc: "📍 Fetch Live Location",
-        mapHint: "👆 Tap anywhere on map to pin problem spot",
-        locDefault: "Location not captured yet.",
-        locFetching: "Fetching GPS coordinates...",
-        locSuccess: "Location Captured! ✅",
-        locError: "Failed to get location. Please allow GPS or select on map.",
-        btnSubmit: "Submit Report",
-        submitting: "Compressing & Submitting...",
-        submitSuccess: "Complaint reported successfully! 🎉"
-    },
-    hi: {
-        title: "स्मार्ट समस्या निवारक",
-        subtitle: "अपने आस-पास की समस्याओं को सीधे प्रशासन तक पहुँचाएं",
-        lblCat: "समस्या का प्रकार:",
-        optDefault: "-- समस्या का प्रकार चुनें --",
-        optRoad: "टूटी सड़क / गड्ढा (Pothole)",
-        optGarbage: "कचरे का ढेर (Garbage Dump)",
-        optWater: "पानी का रिसाव (Water Leakage)",
-        optLight: "खराब स्ट्रीट लाइट",
-        optOther: "अन्य समस्या",
-        lblDesc: "समस्या का विवरण:",
-        placeholderDesc: "समस्या के बारे में विस्तार से लिखें...",
-        lblPhoto: "फोटो खींचें / अपलोड करें:",
-        lblLoc: "लोकेशन (GPS या मैप पर चुनें):",
-        btnLoc: "📍 लाइव लोकेशन प्राप्त करें",
-        mapHint: "👆 समस्या की जगह चुनने के लिए मैप पर टैप करें",
-        locDefault: "लोकेशन अभी नहीं ली गई है।",
-        locFetching: "लोकेशन ली जा रही है...",
-        locSuccess: "लोकेशन दर्ज हो गई! ✅",
-        locError: "लोकेशन नहीं मिल सकी। कृपया मैप पर जगह चुनें।",
-        btnSubmit: "रिपोर्ट दर्ज करें",
-        submitting: "फोटो कंप्रेस और सबमिट हो रही है...",
-        submitSuccess: "आपकी शिकायत सफलतापूर्वक दर्ज कर ली गई है! 🎉"
-    },
-    mr: {
-        title: "स्मार्ट तक्रार निवारक",
-        subtitle: "आपल्या परिसरातील समस्या थेट प्रशासनापर्यंत पोहोचवा",
-        lblCat: "समस्येचा प्रकार:",
-        optDefault: "-- समस्येचा प्रकार निवडा --",
-        optRoad: "खड्डे / खराब रस्ता (Pothole)",
-        optGarbage: "कचऱ्याचे ढीग (Garbage)",
-        optWater: "पाणी गळती (Water Leakage)",
-        optLight: "बंद पथदिवा (Street Light)",
-        optOther: "इतर समस्या",
-        lblDesc: "समस्येचे वर्णन:",
-        placeholderDesc: "समस्येबद्दल सविस्तर माहिती लिहा...",
-        lblPhoto: "फोटो काढा / अपलोड करा:",
-        lblLoc: "स्थान (GPS किंवा नकाशावर निवडा):",
-        btnLoc: "📍 चालू स्थान मिळवा",
-        mapHint: "👆 समस्या असलेली जागा निवडण्यासाठी नकाशावर टॅप करा",
-        locDefault: "स्थान अद्याप नोंदवले नाही.",
-        locFetching: "स्थान शोधत आहे...",
-        locSuccess: "स्थान यशस्वीरित्या नोंदवले! ✅",
-        locError: "स्थान मिळू शकले नाही. कृपया नकाशावर निवडा.",
-        btnSubmit: "तक्रार नोंदवा",
-        submitting: "फोटो कॉम्प्रेस करून पाठवत आहे...",
-        submitSuccess: "आपली तक्रार यशस्वीरित्या नोंदवली गेली आहे! 🎉"
+// Critical Keywords for Zero-Cost NLP Heuristics
+const CRITICAL_KEYWORDS = ["accident", "danger", "spark", "fire", "wire", "burst", "overflow", "death", "deep", "emergency", "current", "hospital", "school", "खतरा", "दुर्घटना", "तार", "आग", "गंभीर"];
+const MEDIUM_KEYWORDS = ["leak", "garbage", "smell", "block", "light", "pothole", "कचरा", "दुर्गंध", "खड्डा", "गळती"];
+
+// 1. Navigation Controller
+function switchTab(viewId) {
+    document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    
+    document.getElementById(`view-${viewId}`).classList.add('active');
+    event?.target?.classList?.add('active');
+
+    if (viewId === 'report') {
+        setTimeout(() => { reportMap.invalidateSize(); }, 300);
+    } else if (viewId === 'tracker') {
+        setTimeout(() => { 
+            trackerMap.invalidateSize();
+            renderTrackerMarkers();
+        }, 300);
     }
-};
+}
 
-// Map Setup
-const map = L.map('map').setView([20.5937, 78.9629], 4);
-L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    maxZoom: 19,
-    attribution: '© OpenStreetMap'
-}).addTo(map);
+// 2. Maps Setup
+function initMaps() {
+    reportMap = L.map('reportMap').setView([20.8149, 75.3545], 14);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(reportMap);
 
-let marker = null;
+    reportMap.on('click', (e) => {
+        setReportLocation(e.latlng.lat, e.latlng.lng);
+    });
 
-function setPinOnMap(lat, lng) {
+    trackerMap = L.map('trackerMap').setView([20.8149, 75.3545], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(trackerMap);
+}
+
+function setReportLocation(lat, lng) {
     userLocation.latitude = lat;
     userLocation.longitude = lng;
+    if (reportMarker) reportMarker.setLatLng([lat, lng]);
+    else reportMarker = L.marker([lat, lng]).addTo(reportMap);
 
-    if (marker) {
-        marker.setLatLng([lat, lng]);
-    } else {
-        marker = L.marker([lat, lng]).addTo(map);
-    }
-
-    const selectedLang = document.getElementById("langSelect").value;
-    const t = translations[selectedLang];
-    const statusText = document.getElementById("locationStatus");
-    statusText.innerText = `${t.locSuccess} (Lat: ${lat.toFixed(4)}, Long: ${lng.toFixed(4)})`;
-    statusText.style.color = "#28a745";
+    document.getElementById('locationFeedback').innerText = `Location Pinned: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+    document.getElementById('locationFeedback').style.color = "#16a34a";
+    triggerAiAnalysis();
 }
 
-map.on('click', function(e) {
-    setPinOnMap(e.latlng.lat, e.latlng.lng);
-});
-
-// Language Function
-function changeLanguage() {
-    const selectedLang = document.getElementById("langSelect").value;
-    const t = translations[selectedLang];
-
-    document.getElementById("txt-title").innerText = t.title;
-    document.getElementById("txt-subtitle").innerText = t.subtitle;
-    document.getElementById("lbl-cat").innerText = t.lblCat;
-    document.getElementById("opt-default").innerText = t.optDefault;
-    document.getElementById("opt-road").innerText = t.optRoad;
-    document.getElementById("opt-garbage").innerText = t.optGarbage;
-    document.getElementById("opt-water").innerText = t.optWater;
-    document.getElementById("opt-light").innerText = t.optLight;
-    document.getElementById("opt-other").innerText = t.optOther;
-    document.getElementById("lbl-desc").innerText = t.lblDesc;
-    document.getElementById("description").placeholder = t.placeholderDesc;
-    document.getElementById("lbl-photo").innerText = t.lblPhoto;
-    document.getElementById("lbl-loc").innerText = t.lblLoc;
-    document.getElementById("locBtn").innerText = t.btnLoc;
-    document.getElementById("map-hint").innerText = t.mapHint;
-    document.getElementById("btn-submit").innerText = t.btnSubmit;
-
-    const locStatus = document.getElementById("locationStatus");
-    if (!userLocation.latitude) {
-        locStatus.innerText = t.locDefault;
-    }
-}
-
-// GPS Location
-function getLocation() {
-    const statusText = document.getElementById("locationStatus");
-    const selectedLang = document.getElementById("langSelect").value;
-    const t = translations[selectedLang];
-
+function fetchLiveLocation() {
     if ("geolocation" in navigator) {
-        statusText.innerText = t.locFetching;
-        statusText.style.color = "#1a73e8";
-
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const lat = position.coords.latitude;
-                const lng = position.coords.longitude;
-                map.setView([lat, lng], 16);
-                setPinOnMap(lat, lng);
-            },
-            () => {
-                statusText.innerText = t.locError;
-                statusText.style.color = "#dc3545";
-            },
-            { enableHighAccuracy: true }
-        );
+        navigator.geolocation.getCurrentPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            reportMap.setView([lat, lng], 16);
+            setReportLocation(lat, lng);
+        }, () => alert("Enable GPS permission or pin spot manually on map."));
     }
 }
 
-// Automatic Photo Compression (Reduces 5MB mobile photo to ~50KB)
+// 3. ZERO-COST AI PRIORITY & CLUSTERING LOGIC
+function calculatePriorityScore(category, text) {
+    let score = 20; // baseline
+    let reasons = [];
+
+    // Category weighting
+    if (category === "Sewage Overflow" || category === "Street Light") {
+        score += 25;
+        reasons.push("Public health/safety category");
+    } else if (category === "Road / Pothole") {
+        score += 20;
+        reasons.push("Traffic disruption category");
+    }
+
+    // Keyword NLP Scan
+    const lowerText = (text || "").toLowerCase();
+    let criticalHits = CRITICAL_KEYWORDS.filter(w => lowerText.includes(w));
+    let medHits = MEDIUM_KEYWORDS.filter(w => lowerText.includes(w));
+
+    if (criticalHits.length > 0) {
+        score += 40;
+        reasons.push(`Detected critical urgency words: "${criticalHits.join(', ')}"`);
+    } else if (medHits.length > 0) {
+        score += 15;
+        reasons.push(`Detected issue words: "${medHits.join(', ')}"`);
+    }
+
+    score = Math.min(score, 100);
+
+    let level = "LOW";
+    let badgeClass = "p-low";
+    if (score >= 65) {
+        level = "HIGH";
+        badgeClass = "p-high";
+    } else if (score >= 40) {
+        level = "MEDIUM";
+        badgeClass = "p-med";
+    }
+
+    return { score, level, badgeClass, explanation: reasons.join(" • ") || "Normal routine grievance." };
+}
+
+function triggerAiAnalysis() {
+    const cat = document.getElementById("category").value;
+    const desc = document.getElementById("description").value;
+    const badge = document.getElementById("aiPriorityBadge");
+    const exp = document.getElementById("aiExplanation");
+
+    const analysis = calculatePriorityScore(cat, desc);
+    badge.className = `p-badge ${analysis.badgeClass}`;
+    badge.innerText = `${analysis.level} (Score: ${analysis.score})`;
+    exp.innerText = analysis.explanation;
+}
+
+// Haversine formula: calculate distance between 2 coordinates in meters
+function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+    return R * c;
+}
+
+// 4. Image Compression (<100KB)
 function compressPhoto(file) {
-    return new Promise((resolve, reject) => {
+    return new Promise((resolve) => {
         const reader = new FileReader();
         reader.readAsDataURL(file);
-        reader.onload = (event) => {
+        reader.onload = (e) => {
             const img = new Image();
-            img.src = event.target.result;
+            img.src = e.target.result;
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                const maxWidth = 800; // Resize width to 800px max
-                const scaleSize = maxWidth / img.width;
+                const maxWidth = 750;
+                const scale = maxWidth / img.width;
                 canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
-                canvas.height = (img.width > maxWidth) ? (img.height * scaleSize) : img.height;
-
+                canvas.height = (img.width > maxWidth) ? (img.height * scale) : img.height;
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                // Compress quality to 70% JPEG
-                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.7);
-                resolve(compressedBase64);
+                resolve(canvas.toDataURL('image/jpeg', 0.65));
             };
-            img.onerror = (err) => reject(err);
         };
-        reader.onerror = (err) => reject(err);
     });
 }
 
-// Form Submit Handler
-document.getElementById("problemForm").addEventListener("submit", async function (e) {
+// 5. Submit Handler
+document.getElementById('civicForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-
-    const selectedLang = document.getElementById("langSelect").value;
-    const t = translations[selectedLang];
-
     if (!userLocation.latitude) {
-        alert("Kripya GPS button dabayein ya map par jagah select karein!");
+        alert("Please set issue location on the map.");
         return;
     }
 
-    const submitBtn = document.getElementById("btn-submit");
-    submitBtn.innerText = t.submitting;
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerText = "Analyzing & Syncing...";
     submitBtn.disabled = true;
 
     try {
-        const category = document.getElementById("category").value;
-        const description = document.getElementById("description").value;
-        const photoFile = document.getElementById("photo").files[0];
+        const cat = document.getElementById('category').value;
+        const desc = document.getElementById('description').value;
+        const photoFile = document.getElementById('photo').files[0];
+        const compressedBase64 = await compressPhoto(photoFile);
 
-        let photoBase64 = "";
-        if (photoFile) {
-            photoBase64 = await compressPhoto(photoFile);
+        // Run AI Score
+        const aiResult = calculatePriorityScore(cat, desc);
+
+        // Check Duplicate Cluster within 100 meters
+        let clusterCount = 1;
+        globalReports.forEach(r => {
+            if (r.category === cat && r.status !== 'Resolved') {
+                const d = getDistanceMeters(userLocation.latitude, userLocation.longitude, r.latitude, r.longitude);
+                if (d <= 100) clusterCount++;
+            }
+        });
+
+        // Boost priority if multiple reports from same 100m zone
+        if (clusterCount > 1) {
+            aiResult.score = Math.min(aiResult.score + 25, 100);
+            if (aiResult.score >= 60) aiResult.level = "HIGH";
         }
 
-        // Firestore mein report save karna
         await db.collection("reports").add({
-            category: category,
-            description: description,
-            photo: photoBase64,
+            category: cat,
+            description: desc,
+            photo: compressedBase64,
             latitude: userLocation.latitude,
             longitude: userLocation.longitude,
+            priorityScore: aiResult.score,
+            priorityLevel: aiResult.level,
+            clusterCount: clusterCount,
             status: "Pending",
             timestamp: firebase.firestore.FieldValue.serverTimestamp()
         });
 
-        alert(t.submitSuccess);
-        document.getElementById("problemForm").reset();
-        userLocation.latitude = null;
-        userLocation.longitude = null;
-        document.getElementById("locationStatus").innerText = t.locDefault;
-        if (marker) {
-            map.removeLayer(marker);
-            marker = null;
-        }
+        alert(`Complaint lodged successfully!\nAI Assigned Priority: ${aiResult.level}`);
+        document.getElementById('civicForm').reset();
+        userLocation = { latitude: null, longitude: null };
+        if (reportMarker) reportMap.removeLayer(reportMarker);
+        switchTab('home');
     } catch (err) {
-        alert("Error: " + err.message);
+        alert("Submission failed: " + err.message);
     } finally {
-        submitBtn.innerText = t.btnSubmit;
+        submitBtn.innerText = "Submit to CivicSense Engine";
         submitBtn.disabled = false;
     }
 });
+
+// 6. Real-Time Data Sync & Dashboard Engine
+db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+    globalReports = [];
+    let total = 0, resolved = 0, critical = 0;
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        data.id = doc.id;
+        globalReports.push(data);
+
+        total++;
+        if (data.status === "Resolved") resolved++;
+        if (data.priorityLevel === "HIGH") critical++;
+    });
+
+    // Update Counter Cards
+    document.getElementById('stat-total').innerText = total;
+    document.getElementById('stat-resolved').innerText = resolved;
+    document.getElementById('stat-critical').innerText = critical;
+
+    renderAdminTable(globalReports);
+});
+
+function renderAdminTable(reports) {
+    const tbody = document.getElementById('adminTableBody');
+    tbody.innerHTML = "";
+
+    if (reports.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" style="text-align: center;">No issues logged yet.</td></tr>`;
+        return;
+    }
+
+    reports.forEach(r => {
+        const badgeColor = r.priorityLevel === 'HIGH' ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
+        const clusterHtml = r.clusterCount > 1 ? `<span class="cluster-tag">⚠️ ${r.clusterCount} Reports Nearby</span>` : `<span style="color:#94a3b8; font-size:11px;">Single Report</span>`;
+        const mapLink = `https://www.google.com/maps?q=${r.latitude},${r.longitude}`;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+            <td><img src="${r.photo}" class="admin-thumb" alt="Issue"/></td>
+            <td><strong>${r.category}</strong><br><small style="color:#64748b;">${r.description}</small></td>
+            <td><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
+            <td>${clusterHtml}</td>
+            <td><a href="${mapLink}" target="_blank" style="color:#2563eb; text-decoration:none; font-weight:600;">📍 Map Link</a></td>
+            <td><strong>${r.status}</strong></td>
+            <td>
+                <button class="btn-status btn-prog" onclick="updateDocStatus('${r.id}', 'In Progress')">Progress</button>
+                <button class="btn-status btn-res" onclick="updateDocStatus('${r.id}', 'Resolved')">Resolve</button>
+            </td>
+        `;
+        tbody.appendChild(tr);
+    });
+}
+
+function updateDocStatus(id, newStatus) {
+    db.collection("reports").doc(id).update({ status: newStatus });
+}
+
+function filterAdminTable() {
+    const filter = document.getElementById('priorityFilter').value;
+    if (filter === "ALL") renderAdminTable(globalReports);
+    else renderAdminTable(globalReports.filter(r => r.priorityLevel === filter));
+}
+
+function renderTrackerMarkers() {
+    globalReports.forEach(r => {
+        if (r.latitude && r.longitude) {
+            L.marker([r.latitude, r.longitude])
+             .addTo(trackerMap)
+             .bindPopup(`<b>${r.category}</b><br>Priority: ${r.priorityLevel}<br>Status: ${r.status}`);
+        }
+    });
+}
+
+// Translations dictionary
+function changeLanguage() {
+    // Localization logic for EN/HI/MR
+}
+
+window.onload = initMaps;
