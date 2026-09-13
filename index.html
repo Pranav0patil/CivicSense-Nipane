@@ -7,26 +7,37 @@
     <meta name="description" content="CivicSense Nipane is an AI-powered smart civic grievance system developed by Pranav Sagar Patil.">
     <meta name="author" content="Pranav Sagar Patil">
 
-    <!-- Browser Tab Favicon -->
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%232563eb'/%3E%3Cpath d='M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z' fill='%23ffffff'/%3E%3Ccircle cx='60' cy='52' r='12' fill='%232563eb'/%3E%3Ccircle cx='60' cy='52' r='6' fill='%2338bdf8'/%3E%3C/svg%3E">
 
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
     <style>
-        .public-creator-bar {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            font-size: 11px;
+        .creator-badge {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            padding: 4px 10px;
+            padding: 6px 12px;
             border-radius: 8px;
+            text-align: right;
+            font-size: 12px;
         }
-        .public-creator-bar a {
+        .creator-badge .creator-title {
+            color: #64748b;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            font-weight: 600;
+        }
+        .creator-badge .creator-name {
+            font-weight: 700;
+            color: #0f172a;
+        }
+        .creator-badge a {
             color: #e1306c;
             text-decoration: none;
-            font-weight: bold;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
         }
         .optional-box {
             background: #f8fafc;
@@ -40,7 +51,6 @@
 </head>
 <body>
 
-    <!-- Navigation Bar -->
     <nav class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; flex-wrap: wrap; gap: 10px;">
         <div class="nav-brand" style="display: flex; align-items: center; gap: 8px; font-weight: bold;">
             <svg width="28" height="28" viewBox="0 0 120 120">
@@ -52,10 +62,9 @@
             CivicSense <span class="ai-badge">AI Core</span>
         </div>
 
-        <!-- Creator Profile Tag -->
-        <div class="public-creator-bar">
-            <span>Lead: <strong>Pranav Sagar Patil</strong></span>
-            <span>•</span>
+        <div class="creator-badge">
+            <div class="creator-title">SYSTEM ARCHITECT & LEAD</div>
+            <div class="creator-name">Pranav Sagar Patil</div>
             <a href="https://instagram.com/pranav__jagtap.0001" target="_blank">📸 @pranav__jagtap.0001</a>
         </div>
 
@@ -75,8 +84,7 @@
     </nav>
 
     <main class="main-content">
-
-        <!-- 1. HOME SCREEN -->
+        <!-- 1. HOME -->
         <section id="view-home" class="view-panel active">
             <div class="hero-card">
                 <h1 id="home-title">Intelligent Civic Grievance System</h1>
@@ -103,7 +111,7 @@
             </div>
         </section>
 
-        <!-- 2. REPORT SCREEN (AI FORM) -->
+        <!-- 2. REPORT -->
         <section id="view-report" class="view-panel">
             <div class="form-container">
                 <h2 id="form-heading">Report Civic Issue</h2>
@@ -122,7 +130,6 @@
                     <label id="lbl-desc" for="description">Problem Description</label>
                     <textarea id="description" rows="3" placeholder="Describe issue (e.g. broken wire sparking, accident hazard)..." required oninput="triggerAiAnalysis()"></textarea>
 
-                    <!-- Real-Time Enhanced AI Meter -->
                     <div class="ai-preview-box">
                         <div class="ai-meter-header">
                             <span id="txt-ai-meter-title">🤖 AI Urgency Engine:</span>
@@ -139,7 +146,6 @@
                     <div id="reportMap" class="map-box"></div>
                     <p id="locationFeedback" class="status-msg">Location pending.</p>
 
-                    <!-- Optional Reporter Information -->
                     <div class="optional-box">
                         <label id="lbl-optional-title" style="font-weight: bold; margin-bottom: 6px; display: block;">Citizen Details (Optional)</label>
                         <input type="text" id="reporterName" placeholder="Your Name (Optional)" style="margin-bottom: 8px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
@@ -151,7 +157,7 @@
             </div>
         </section>
 
-        <!-- 3. PUBLIC TRACKER SCREEN -->
+        <!-- 3. LIVE TRACKER -->
         <section id="view-tracker" class="view-panel">
             <div class="tracker-container">
                 <h2 id="tracker-title">Live Public Issue Tracker</h2>
@@ -159,14 +165,12 @@
                 <div id="trackerMap" class="map-box-large"></div>
             </div>
         </section>
-
     </main>
 
     <footer style="text-align: center; padding: 25px 0; color: #94a3b8; font-size: 12px;">
         CivicSense-Nipane • Built by Pranav Sagar Patil • <a href="admin.html" style="color: #94a3b8; text-decoration: none;">Authorized Portal</a>
     </footer>
 
-    <!-- Scripts -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
