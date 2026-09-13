@@ -23,7 +23,7 @@ let currentLang = 'en';
 const CRITICAL_KEYWORDS = ["accident", "danger", "spark", "fire", "wire", "burst", "overflow", "death", "deep", "emergency", "current", "hospital", "school", "खतरा", "दुर्घटना", "तार", "आग", "गंभीर", "विद्युत", "धोका", "अपघात", "शॉक", "गळती", "पाणी", "लाईट", "करंट"];
 const MEDIUM_KEYWORDS = ["leak", "garbage", "smell", "block", "light", "pothole", "कचरा", "दुर्गंध", "खड्डा", "गंदगी", "बंद", "तुंबले", "रस्ता"];
 
-// Generate Unique 7-Character Report ID (Format: NIP-4120)
+// Generate Unique 7-Character Report ID (Strictly 3 letters + 4 digits: e.g. NIP-5479)
 function generateReportId() {
     const num = Math.floor(1000 + Math.random() * 9000);
     return `NIP-${num}`;
@@ -714,10 +714,16 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     snapshot.forEach(doc => {
         const data = doc.data();
         data.id = doc.id;
-        // Fallback for older reports without custom reportId
-        if (!data.reportId) {
-            data.reportId = `NIP-${data.id.substring(0, 4).toUpperCase()}`;
+
+        // Ensure strictly NIP-XXXX format (where XXXX is 4 pure numbers)
+        if (!data.reportId || !/^NIP-\d{4}$/.test(data.reportId)) {
+            let hash = 0;
+            for (let i = 0; i < data.id.length; i++) {
+                hash = (hash * 31 + data.id.charCodeAt(i)) % 9000;
+            }
+            data.reportId = `NIP-${1000 + Math.abs(hash)}`;
         }
+
         globalReports.push(data);
 
         total++;
@@ -789,7 +795,7 @@ function applySortingAndFiltering() {
 
     let filtered = [...globalReports];
 
-    // Search Filtering (ID, Category, Description)
+    // Search Filtering (ID, Category, Description, Citizen Name)
     if (searchKeyword) {
         filtered = filtered.filter(r => 
             (r.reportId && r.reportId.toLowerCase().includes(searchKeyword)) ||
@@ -927,10 +933,9 @@ function openClusterListModal(reportDocId, mode) {
         subtitle.innerText = `Issues matching descriptions with issue #${parentReport.reportId}:`;
     }
 
-    // Include the original report as Root
     const allLinked = [parentReport, ...related];
 
-    allLinked.forEach((item, i) => {
+    allLinked.forEach((item) => {
         let dateStr = "Recent";
         if (item.timestamp) {
             const d = item.timestamp.toDate();
