@@ -44,31 +44,37 @@
             align-items: center;
             gap: 4px;
         }
+        .sort-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
         .table-row-hover:hover {
             background-color: #f8fafc;
             cursor: pointer;
         }
-        /* Detail Modal */
+        /* Modal for Detail View */
         .modal {
             display: none;
             position: fixed;
-            z-index: 999;
+            z-index: 9999;
             left: 0;
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(15, 23, 42, 0.65);
+            background-color: rgba(15, 23, 42, 0.6);
             backdrop-filter: blur(4px);
         }
         .modal-content {
             background-color: #ffffff;
-            margin: 3% auto;
+            margin: 5% auto;
             padding: 24px;
             border-radius: 12px;
             width: 90%;
             max-width: 650px;
             position: relative;
-            max-height: 90vh;
+            max-height: 85vh;
             overflow-y: auto;
             box-shadow: 0 10px 25px rgba(0,0,0,0.2);
         }
@@ -76,71 +82,10 @@
             position: absolute;
             right: 18px;
             top: 14px;
-            font-size: 26px;
+            font-size: 24px;
             font-weight: bold;
             color: #64748b;
             cursor: pointer;
-        }
-        .zoomable-thumb {
-            cursor: zoom-in;
-            transition: transform 0.2s;
-        }
-        .zoomable-thumb:hover {
-            transform: scale(1.01);
-        }
-
-        /* Fullscreen Lightbox Zoom View */
-        .lightbox-overlay {
-            display: none;
-            position: fixed;
-            z-index: 10000;
-            left: 0;
-            top: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.92);
-            align-items: center;
-            justify-content: center;
-            overflow: hidden;
-        }
-        .lightbox-img {
-            max-width: 90%;
-            max-height: 85%;
-            transition: transform 0.15s ease-out;
-            transform-origin: center center;
-            user-select: none;
-            cursor: grab;
-        }
-        .lightbox-controls {
-            position: absolute;
-            bottom: 25px;
-            display: flex;
-            gap: 15px;
-            z-index: 10001;
-        }
-        .zoom-btn {
-            background: rgba(255, 255, 255, 0.25);
-            color: #fff;
-            border: 1px solid rgba(255,255,255,0.4);
-            padding: 8px 16px;
-            border-radius: 20px;
-            cursor: pointer;
-            font-size: 14px;
-            font-weight: bold;
-            backdrop-filter: blur(5px);
-        }
-        .zoom-btn:hover {
-            background: rgba(255, 255, 255, 0.45);
-        }
-        .lightbox-close {
-            position: absolute;
-            top: 20px;
-            right: 25px;
-            color: #fff;
-            font-size: 32px;
-            font-weight: bold;
-            cursor: pointer;
-            z-index: 10001;
         }
     </style>
 </head>
@@ -148,6 +93,7 @@
 
     <div style="max-width: 1250px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         
+        <!-- Header -->
         <div class="admin-header-flex">
             <div>
                 <h1 id="admin-title" style="margin: 0; font-size: 22px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
@@ -162,6 +108,7 @@
                 <p id="admin-subtitle" style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Real-Time Citizen Grievance & AI Prioritization Console</p>
             </div>
 
+            <!-- Profile & Multi-language -->
             <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
                 <select id="adminLangSelect" onchange="changeLanguage(this.value)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
                     <option value="en">English</option>
@@ -170,7 +117,7 @@
                 </select>
 
                 <div class="creator-badge">
-                    <div class="creator-title">SYSTEM ARCHITECT & LEAD</div>
+                    <div class="creator-title">System Architect & Lead</div>
                     <div class="creator-name">Pranav Sagar Patil</div>
                     <a href="https://instagram.com/pranav__jagtap.0001" target="_blank">📸 @pranav__jagtap.0001</a>
                 </div>
@@ -179,6 +126,7 @@
             </div>
         </div>
 
+        <!-- Sorter and Filter Toolbar -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
             <div style="display: flex; gap: 10px;">
                 <span style="background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeUrgent">🔴 High: 0</span>
@@ -186,7 +134,7 @@
                 <span style="background: #dcfce7; color: #16a34a; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeLow">🟢 Low: 0</span>
             </div>
 
-            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <div class="sort-controls">
                 <label id="lbl-sort" style="font-size: 13px; font-weight: 600; color: #475569;">Sort By:</label>
                 <select id="sortBySelect" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
                     <option value="newest">📅 Date: Newest First</option>
@@ -204,6 +152,7 @@
             </div>
         </div>
 
+        <!-- Issue Table -->
         <div style="overflow-x: auto;">
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
                 <thead>
@@ -221,37 +170,25 @@
                 <tbody id="adminTableBody"></tbody>
             </table>
         </div>
+
     </div>
 
-    <!-- Detail Modal -->
+    <!-- Detail View Modal -->
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
             <h2 id="modalCategory" style="margin-top: 0; color: #0f172a;">Issue Details</h2>
-            <div style="position: relative;">
-                <img id="modalImg" src="" class="zoomable-thumb" style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;" alt="Issue Preview" onclick="openLightbox()">
-                <small style="color: #64748b; display: block; margin-bottom: 12px;">🔍 Click image to enlarge & zoom</small>
-            </div>
-            <p><strong><span id="txt-modal-dt">Date & Time</span>:</strong> <span id="modalDateTime"></span></p>
-            <p><strong><span id="txt-modal-urgency">AI Urgency</span>:</strong> <span id="modalPriority"></span></p>
-            <p><strong><span id="txt-modal-cit">Citizen Details</span>:</strong> <span id="modalReporter"></span></p>
-            <p><strong><span id="txt-modal-desc">Description</span>:</strong></p>
+            <img id="modalImg" src="" style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 8px; margin-bottom: 12px;" alt="Issue Preview">
+            <p><strong>Date & Time:</strong> <span id="modalDateTime"></span></p>
+            <p><strong>AI Urgency:</strong> <span id="modalPriority"></span></p>
+            <p><strong>Citizen Details:</strong> <span id="modalReporter"></span></p>
+            <p><strong>Description:</strong></p>
             <div id="modalDesc" style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 12px;"></div>
             <a id="modalMapLink" href="#" target="_blank" style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold;">📍 Open Live Spot on Google Maps</a>
         </div>
     </div>
 
-    <!-- Fullscreen Zoom Lightbox -->
-    <div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightboxOnBackdrop(event)">
-        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-        <img id="lightboxImage" class="lightbox-img" src="" alt="Full Zoom Preview">
-        <div class="lightbox-controls">
-            <button class="zoom-btn" onclick="adjustZoom(0.25)">➕ Zoom In</button>
-            <button class="zoom-btn" onclick="adjustZoom(-0.25)">➖ Zoom Out</button>
-            <button class="zoom-btn" onclick="resetZoom()">🔄 Reset</button>
-        </div>
-    </div>
-
+    <!-- Firebase Dependencies -->
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
