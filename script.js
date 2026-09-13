@@ -61,6 +61,12 @@ const TRANSLATIONS = {
         adminTitle: "CivicSense-Nipane Grampanchayat Admin Portal",
         adminSubtitle: "Real-Time Citizen Grievance & AI Prioritization Console",
         openPublic: "← Open Public App",
+        viewModeLabel: "View Mode:",
+        viewModes: {
+            none: "📋 Default (Flat List)",
+            geo: "📍 Group by Nearby (100m Geo-Clusters)",
+            aiSame: "🤖 Group by Same Problems (AI Matched)"
+        },
         sortLabel: "Sort By:",
         sortOptions: {
             newest: "📅 Date: Newest First",
@@ -79,6 +85,7 @@ const TRANSLATIONS = {
             citizen: "Citizen Info",
             priority: "AI Urgency",
             cluster: "Geo-Cluster",
+            same: "AI Match",
             status: "Status",
             action: "Action"
         },
@@ -88,7 +95,8 @@ const TRANSLATIONS = {
         anonymous: "Anonymous",
         noPhone: "No Phone",
         singleReport: "Single",
-        clusterTag: "Nearby"
+        clusterTag: "Nearby",
+        uniqueIssue: "Unique"
     },
     hi: {
         navHome: "होम",
@@ -126,6 +134,12 @@ const TRANSLATIONS = {
         adminTitle: "सिविकसेंस-निपाणे ग्रामपंचायत एडमिन पोर्टल",
         adminSubtitle: "नागरिक शिकायत व एआई प्राथमिकता प्रबंधन प्रणाली",
         openPublic: "← पब्लिक ऐप खोलें",
+        viewModeLabel: "व्यू मोड:",
+        viewModes: {
+            none: "📋 सामान्य सूची",
+            geo: "📍 100 मी. क्लस्टर समूह",
+            aiSame: "🤖 समान समस्या समूह (AI)"
+        },
         sortLabel: "क्रमबद्ध करें:",
         sortOptions: {
             newest: "📅 दिनांक: नवीनतम पहले",
@@ -144,6 +158,7 @@ const TRANSLATIONS = {
             citizen: "नागरिक विवरण",
             priority: "एआई गंभीरता",
             cluster: "क्लस्टर चेतावनी",
+            same: "समान समस्या",
             status: "स्थिति",
             action: "कार्रवाई"
         },
@@ -153,7 +168,8 @@ const TRANSLATIONS = {
         anonymous: "अज्ञात नागरिक",
         noPhone: "नंबर नहीं",
         singleReport: "एकल रिपोर्ट",
-        clusterTag: "आसपास"
+        clusterTag: "आसपास",
+        uniqueIssue: "अद्वितीय"
     },
     mr: {
         navHome: "मुख्यपृष्ठ",
@@ -191,6 +207,12 @@ const TRANSLATIONS = {
         adminTitle: "सिव्हिकसेन्स-निपाणे ग्रामपंचायत ॲडमिन पोर्टल",
         adminSubtitle: "नागरी तक्रार व एआय प्राधान्य व्यवस्थापन प्रणाली",
         openPublic: "← पब्लिक ॲप उघडा",
+        viewModeLabel: "पाहणी पद्धत:",
+        viewModes: {
+            none: "📋 सामान्य यादी",
+            geo: "📍 १०० मी. परिसर गट (क्लस्टर)",
+            aiSame: "🤖 समान समस्या गट (AI जुळणी)"
+        },
         sortLabel: "क्रमवारी:",
         sortOptions: {
             newest: "📅 दिनांक: नवीन आधी",
@@ -209,6 +231,7 @@ const TRANSLATIONS = {
             citizen: "नागरिकाची माहिती",
             priority: "एआय प्राधान्य",
             cluster: "क्लस्टर इशारा",
+            same: "एआय जुळणी",
             status: "स्थिती",
             action: "कृती"
         },
@@ -218,7 +241,8 @@ const TRANSLATIONS = {
         anonymous: "अनामिक नागरिक",
         noPhone: "नंबर नाही",
         singleReport: "एकच तक्रार",
-        clusterTag: "जवळपास"
+        clusterTag: "जवळपास",
+        uniqueIssue: "एकमेव"
     }
 };
 
@@ -227,13 +251,12 @@ function changeLanguage(lang) {
     const t = TRANSLATIONS[lang];
     if (!t) return;
 
-    // Sync selectors if both exist
     const pSel = document.getElementById("langSelect");
     const aSel = document.getElementById("adminLangSelect");
     if (pSel) pSel.value = lang;
     if (aSel) aSel.value = lang;
 
-    // Public Page Elements
+    // Public Dashboard
     const navHome = document.getElementById("nav-home");
     const navReport = document.getElementById("nav-report");
     const navTracker = document.getElementById("nav-tracker");
@@ -283,7 +306,6 @@ function changeLanguage(lang) {
     if (trackerTitle) trackerTitle.innerText = t.trackerTitle;
     if (trackerSubtitle) trackerSubtitle.innerText = t.trackerSubtitle;
 
-    // Public Category Dropdown
     const catSelect = document.getElementById("category");
     if (catSelect) {
         const val = catSelect.value;
@@ -297,10 +319,11 @@ function changeLanguage(lang) {
         catSelect.value = val;
     }
 
-    // Admin Page Elements
+    // Admin Dashboard
     const adminTitle = document.getElementById("admin-title");
     const adminSubtitle = document.getElementById("admin-subtitle");
     const linkPublic = document.getElementById("link-public-app");
+    const lblGroup = document.getElementById("lbl-group");
     const lblSort = document.getElementById("lbl-sort");
 
     if (adminTitle) {
@@ -316,9 +339,18 @@ function changeLanguage(lang) {
     }
     if (adminSubtitle) adminSubtitle.innerText = t.adminSubtitle;
     if (linkPublic) linkPublic.innerText = t.openPublic;
+    if (lblGroup) lblGroup.innerText = t.viewModeLabel;
     if (lblSort) lblSort.innerText = t.sortLabel;
 
-    // Admin Sorter Dropdown Options
+    const groupSelect = document.getElementById("groupBySelect");
+    if (groupSelect) {
+        const gVal = groupSelect.value;
+        groupSelect.options[0].text = t.viewModes.none;
+        groupSelect.options[1].text = t.viewModes.geo;
+        groupSelect.options[2].text = t.viewModes.aiSame;
+        groupSelect.value = gVal;
+    }
+
     const sortBySelect = document.getElementById("sortBySelect");
     if (sortBySelect) {
         const sortVal = sortBySelect.value;
@@ -329,7 +361,6 @@ function changeLanguage(lang) {
         sortBySelect.value = sortVal;
     }
 
-    // Admin Priority Filter Dropdown
     const pFilter = document.getElementById("priorityFilter");
     if (pFilter) {
         const filterVal = pFilter.value;
@@ -340,7 +371,6 @@ function changeLanguage(lang) {
         pFilter.value = filterVal;
     }
 
-    // Table Column Headers
     const ths = t.tableHeaders;
     if (document.getElementById("th-photo")) document.getElementById("th-photo").innerText = ths.photo;
     if (document.getElementById("th-date")) document.getElementById("th-date").innerText = ths.date;
@@ -348,10 +378,10 @@ function changeLanguage(lang) {
     if (document.getElementById("th-citizen")) document.getElementById("th-citizen").innerText = ths.citizen;
     if (document.getElementById("th-priority")) document.getElementById("th-priority").innerText = ths.priority;
     if (document.getElementById("th-cluster")) document.getElementById("th-cluster").innerText = ths.cluster;
+    if (document.getElementById("th-same")) document.getElementById("th-same").innerText = ths.same;
     if (document.getElementById("th-status")) document.getElementById("th-status").innerText = ths.status;
     if (document.getElementById("th-action")) document.getElementById("th-action").innerText = ths.action;
 
-    // Re-render admin table for localized action buttons & labels
     applySortingAndFiltering();
 }
 
@@ -485,7 +515,7 @@ function triggerAiAnalysis() {
     exp.innerText = analysis.explanation;
 }
 
-// Distance Formula
+// Distance Calculation
 function getDistanceMeters(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
@@ -496,6 +526,18 @@ function getDistanceMeters(lat1, lon1, lat2, lon2) {
               Math.cos(φ1) * Math.cos(φ2) *
               Math.sin(Δλ/2) * Math.sin(Δλ/2);
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+// AI Semantic Problem Similarity Matcher
+function calculateSimilarity(text1, text2) {
+    if (!text1 || !text2) return 0;
+    const words1 = text1.toLowerCase().replace(/[^\w\s\u0900-\u097F]/gi, '').split(/\s+/).filter(w => w.length > 2);
+    const words2 = text2.toLowerCase().replace(/[^\w\s\u0900-\u097F]/gi, '').split(/\s+/).filter(w => w.length > 2);
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    const set1 = new Set(words1);
+    const common = words2.filter(w => set1.has(w));
+    return (2.0 * common.length) / (words1.length + words2.length);
 }
 
 // 4. Image Compression
@@ -520,7 +562,7 @@ function compressPhoto(file) {
     });
 }
 
-// 5. Submit Handler with Report Language Storage
+// 5. Submit Handler
 const civicForm = document.getElementById('civicForm');
 if (civicForm) {
     civicForm.addEventListener('submit', async (e) => {
@@ -568,7 +610,7 @@ if (civicForm) {
                 clusterCount: clusterCount,
                 reporterName: reporterName,
                 reporterPhone: reporterPhone,
-                reportLang: currentLang, // Saved for language-matched WhatsApp updates
+                reportLang: currentLang,
                 status: "Pending",
                 timestamp: firebase.firestore.FieldValue.serverTimestamp()
             });
@@ -593,7 +635,7 @@ if (civicForm) {
     });
 }
 
-// 6. Real-Time Sync & Admin Sorter
+// 6. Real-Time Sync
 db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     globalReports = [];
     let total = 0, resolved = 0, critical = 0, medium = 0, low = 0;
@@ -608,6 +650,44 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
         if (data.priorityLevel === "HIGH" || data.priorityLevel === "CRITICAL") critical++;
         else if (data.priorityLevel === "MEDIUM") medium++;
         else low++;
+    });
+
+    // Dynamic Calculation of Geo-Clusters & AI Problem Matches
+    globalReports.forEach((r, idx) => {
+        // Recalculate Live 100m Geo-Cluster
+        let nearbyMatches = 1;
+        let nearbyGroupIds = [r.id];
+
+        // AI Problem Match
+        let sameMatches = 1;
+        let sameGroupIds = [r.id];
+
+        globalReports.forEach((other, oIdx) => {
+            if (idx !== oIdx) {
+                // Geo-Distance
+                if (r.latitude && r.longitude && other.latitude && other.longitude) {
+                    const dist = getDistanceMeters(r.latitude, r.longitude, other.latitude, other.longitude);
+                    if (dist <= 100) {
+                        nearbyMatches++;
+                        nearbyGroupIds.push(other.id);
+                    }
+                }
+
+                // AI Category + Text Similarity Match
+                if (r.category === other.category) {
+                    const sim = calculateSimilarity(r.description, other.description);
+                    if (sim >= 0.35 || (r.description && other.description && r.description.trim().toLowerCase() === other.description.trim().toLowerCase())) {
+                        sameMatches++;
+                        sameGroupIds.push(other.id);
+                    }
+                }
+            }
+        });
+
+        r.liveNearbyCount = nearbyMatches;
+        r.nearbyGroupId = nearbyGroupIds.sort().join('_');
+        r.liveSameCount = sameMatches;
+        r.sameGroupId = sameGroupIds.sort().join('_');
     });
 
     const statTotal = document.getElementById('stat-total');
@@ -631,9 +711,11 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     }
 });
 
+// Group By + Sorting + Filter Controller
 function applySortingAndFiltering() {
     if (!document.getElementById('adminTableBody')) return;
 
+    const groupBy = document.getElementById('groupBySelect') ? document.getElementById('groupBySelect').value : 'none';
     const sortType = document.getElementById('sortBySelect') ? document.getElementById('sortBySelect').value : 'newest';
     const filter = document.getElementById('priorityFilter') ? document.getElementById('priorityFilter').value : 'All';
 
@@ -656,10 +738,10 @@ function applySortingAndFiltering() {
         return 0;
     });
 
-    renderAdminTable(filtered);
+    renderAdminTable(filtered, groupBy);
 }
 
-function renderAdminTable(reports) {
+function renderAdminTable(reports, groupBy = 'none') {
     const tbody = document.getElementById('adminTableBody');
     if (!tbody) return;
     tbody.innerHTML = "";
@@ -667,15 +749,23 @@ function renderAdminTable(reports) {
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
 
     if (reports.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="8" style="text-align: center; padding: 20px; color: #64748b;">No matching issues found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">No matching issues found.</td></tr>`;
         return;
     }
 
-    reports.forEach(r => {
+    // Helper to generate single row HTML
+    function buildRowHtml(r) {
         const badgeColor = (r.priorityLevel === 'HIGH' || r.priorityLevel === 'CRITICAL') ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
-        const clusterHtml = r.clusterCount > 1 
-            ? `<span class="cluster-tag">⚠️ ${r.clusterCount} ${t.clusterTag}</span>` 
+        
+        const countGeo = r.liveNearbyCount || r.clusterCount || 1;
+        const clusterHtml = countGeo > 1 
+            ? `<span class="cluster-tag">⚠️ ${countGeo} ${t.clusterTag}</span>` 
             : `<span style="color:#94a3b8; font-size:11px;">${t.singleReport}</span>`;
+
+        const countSame = r.liveSameCount || 1;
+        const sameHtml = countSame > 1 
+            ? `<span class="ai-same-tag">🔁 ${countSame} Same</span>` 
+            : `<span style="color:#94a3b8; font-size:11px;">${t.uniqueIssue}</span>`;
         
         let dateStr = "Recent";
         if (r.timestamp) {
@@ -687,29 +777,61 @@ function renderAdminTable(reports) {
         const citizenPhone = r.reporterPhone ? r.reporterPhone : t.noPhone;
         const citizenInfo = `<strong>${citizenName}</strong><br><small style="color:#64748b;">${citizenPhone}</small>`;
 
-        const tr = document.createElement('tr');
-        tr.className = "table-row-hover";
-        tr.style.borderBottom = "1px solid #f1f5f9";
-        
-        tr.innerHTML = `
-            <td style="padding: 10px;" onclick="openModal('${r.id}')"><img src="${r.photo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" alt="Issue"/></td>
-            <td style="padding: 10px; font-size: 12px; color: #475569;" onclick="openModal('${r.id}')">${dateStr}</td>
-            <td style="padding: 10px;" onclick="openModal('${r.id}')"><strong>${r.category}</strong><br><small style="color:#64748b;">${(r.description || '').substring(0, 35)}...</small></td>
-            <td style="padding: 10px;" onclick="openModal('${r.id}')">${citizenInfo}</td>
-            <td style="padding: 10px;" onclick="openModal('${r.id}')"><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
-            <td style="padding: 10px;" onclick="openModal('${r.id}')">${clusterHtml}</td>
-            <td style="padding: 10px;"><strong>${r.status}</strong></td>
-            <td style="padding: 10px;">
-                <button style="background:#0284c7; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="updateDocStatus('${r.id}', 'In Progress')">${t.btnProg}</button>
-                <button style="background:#16a34a; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="updateDocStatus('${r.id}', 'Resolved')">${t.btnRes}</button>
-                <button style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px;" onclick="deleteDocReport('${r.id}')">${t.btnDel}</button>
-            </td>
+        return `
+            <tr class="table-row-hover" style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><img src="${r.photo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" alt="Issue"/></td>
+                <td style="padding: 10px; font-size: 12px; color: #475569;" onclick="openModal('${r.id}')">${dateStr}</td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><strong>${r.category}</strong><br><small style="color:#64748b;">${(r.description || '').substring(0, 35)}...</small></td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')">${citizenInfo}</td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')">${clusterHtml}</td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')">${sameHtml}</td>
+                <td style="padding: 10px;"><strong>${r.status}</strong></td>
+                <td style="padding: 10px;">
+                    <button style="background:#0284c7; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="updateDocStatus('${r.id}', 'In Progress')">${t.btnProg}</button>
+                    <button style="background:#16a34a; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="updateDocStatus('${r.id}', 'Resolved')">${t.btnRes}</button>
+                    <button style="background:#ef4444; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px;" onclick="deleteDocReport('${r.id}')">${t.btnDel}</button>
+                </td>
+            </tr>
         `;
-        tbody.appendChild(tr);
-    });
+    }
+
+    if (groupBy === 'none') {
+        tbody.innerHTML = reports.map(buildRowHtml).join('');
+    } else if (groupBy === 'geo') {
+        // Group by Nearby 100m Coordinates Cluster
+        const groups = {};
+        reports.forEach(r => {
+            const key = (r.liveNearbyCount > 1) ? `📍 100m Cluster Zone (${r.liveNearbyCount} Reports Together)` : `📍 Isolated / Single Reports`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(r);
+        });
+
+        let fullHtml = "";
+        for (const [groupName, items] of Object.entries(groups)) {
+            fullHtml += `<tr><td colspan="9" class="group-header-row">${groupName}</td></tr>`;
+            fullHtml += items.map(buildRowHtml).join('');
+        }
+        tbody.innerHTML = fullHtml;
+    } else if (groupBy === 'aiSame') {
+        // Group by AI Semantic Match (Category + Same Description)
+        const groups = {};
+        reports.forEach(r => {
+            const key = (r.liveSameCount > 1) ? `🤖 AI Matched Group: "${r.category}" (${r.liveSameCount} Identical Reports)` : `🤖 Unique Individual Reports`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(r);
+        });
+
+        let fullHtml = "";
+        for (const [groupName, items] of Object.entries(groups)) {
+            fullHtml += `<tr><td colspan="9" class="group-header-row" style="background:#f3e8ff; color:#581c87;">${groupName}</td></tr>`;
+            fullHtml += items.map(buildRowHtml).join('');
+        }
+        tbody.innerHTML = fullHtml;
+    }
 }
 
-// Multilingual WhatsApp Notification on Status Update
+// Multilingual WhatsApp Notification
 function updateDocStatus(id, newStatus) {
     const report = globalReports.find(r => r.id === id);
     db.collection("reports").doc(id).update({ status: newStatus }).then(() => {
@@ -752,7 +874,7 @@ function deleteDocReport(id) {
     }
 }
 
-// 7. Modal & Image Lightbox Zoom Engine
+// Modal & Lightbox Controls
 let currentZoom = 1;
 
 function openModal(id) {
@@ -780,7 +902,6 @@ function closeModal() {
     document.getElementById('detailModal').style.display = "none";
 }
 
-// Fullscreen Lightbox Zoom Controls
 function openLightbox() {
     const mainImg = document.getElementById('modalImg');
     const lbImg = document.getElementById('lightboxImage');
@@ -814,7 +935,6 @@ function resetZoom() {
     if (lbImg) lbImg.style.transform = `scale(1)`;
 }
 
-// Mouse Wheel Zoom Support inside Lightbox
 window.addEventListener('wheel', function(e) {
     const lb = document.getElementById('lightboxOverlay');
     if (lb && lb.style.display === 'flex') {
