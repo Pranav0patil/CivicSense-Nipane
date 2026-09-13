@@ -47,6 +47,15 @@
             margin-top: 15px;
             margin-bottom: 15px;
         }
+        .status-card-box {
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 20px;
+            margin-top: 15px;
+            display: none;
+            box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
+        }
     </style>
 </head>
 <body>
@@ -72,6 +81,7 @@
             <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">Home</button>
             <button class="nav-btn" id="nav-report" onclick="switchTab('report')">Report</button>
             <button class="nav-btn" id="nav-tracker" onclick="switchTab('tracker')">Live Tracker</button>
+            <button class="nav-btn" id="nav-status" onclick="switchTab('status')">🔍 Track Status</button>
         </div>
 
         <div class="lang-selector">
@@ -163,6 +173,30 @@
                 <h2 id="tracker-title">Live Public Issue Tracker</h2>
                 <p id="tracker-subtitle" style="color: #64748b; font-size: 13px; margin-top: 4px;">Click on any marker to see status & AI priority.</p>
                 <div id="trackerMap" class="map-box-large"></div>
+            </div>
+        </section>
+
+        <!-- 4. TRACK GRIEVANCE STATUS BY ID -->
+        <section id="view-status" class="view-panel">
+            <div class="form-container" style="max-width: 600px;">
+                <h2 id="track-status-title">Track Grievance Status</h2>
+                <p id="track-status-subtitle" style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Enter your 7-character Report ID (e.g., NIP-4120) to check real-time progress.</p>
+                
+                <div style="display: flex; gap: 8px;">
+                    <input type="text" id="searchReportIdInput" placeholder="Enter Report ID (e.g. NIP-1234)" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; text-transform: uppercase;">
+                    <button type="button" class="loc-btn" id="btn-search-status" style="width: auto; margin-top: 0; padding: 0 20px;" onclick="trackCitizenReport()">Search</button>
+                </div>
+
+                <div id="statusResultCard" class="status-card-box">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <span id="resReportId" style="font-weight: 800; color: #2563eb; font-size: 16px;"></span>
+                        <span id="resStatusBadge" class="p-badge"></span>
+                    </div>
+                    <p><strong>Category:</strong> <span id="resCategory"></span></p>
+                    <p><strong>Logged On:</strong> <span id="resDate"></span></p>
+                    <p><strong>AI Priority:</strong> <span id="resPriority"></span></p>
+                    <p><strong>Description:</strong> <span id="resDesc" style="color: #475569;"></span></p>
+                </div>
             </div>
         </section>
     </main>
