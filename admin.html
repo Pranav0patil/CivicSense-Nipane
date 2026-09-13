@@ -3,26 +3,31 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CivicSense Nipane - AI-Powered Civic Grievance System</title>
-    <meta name="description" content="CivicSense Nipane is an AI-powered smart civic grievance system developed by Pranav Sagar Patil.">
-    <meta name="author" content="Pranav Sagar Patil">
-
+    <title>CivicSense-Nipane Grampanchayat Admin Portal</title>
     <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 120 120'%3E%3Crect width='120' height='120' rx='28' fill='%232563eb'/%3E%3Cpath d='M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z' fill='%23ffffff'/%3E%3Ccircle cx='60' cy='52' r='12' fill='%232563eb'/%3E%3Ccircle cx='60' cy='52' r='6' fill='%2338bdf8'/%3E%3C/svg%3E">
-
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <link rel="stylesheet" href="style.css">
     <style>
+        .admin-header-flex {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            margin-bottom: 20px;
+        }
         .creator-badge {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            padding: 6px 12px;
-            border-radius: 8px;
+            padding: 8px 14px;
+            border-radius: 10px;
             text-align: right;
-            font-size: 12px;
+            font-size: 13px;
         }
         .creator-badge .creator-title {
             color: #64748b;
-            font-size: 10px;
+            font-size: 11px;
             text-transform: uppercase;
             letter-spacing: 0.5px;
             font-weight: 600;
@@ -39,139 +44,214 @@
             align-items: center;
             gap: 4px;
         }
-        .optional-box {
-            background: #f8fafc;
-            border: 1px dashed #cbd5e1;
-            padding: 12px;
-            border-radius: 8px;
-            margin-top: 15px;
-            margin-bottom: 15px;
+        .table-row-hover:hover {
+            background-color: #f8fafc;
+            cursor: pointer;
+        }
+        /* Detail Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(15, 23, 42, 0.65);
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            background-color: #ffffff;
+            margin: 3% auto;
+            padding: 24px;
+            border-radius: 12px;
+            width: 90%;
+            max-width: 650px;
+            position: relative;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+        }
+        .close-btn {
+            position: absolute;
+            right: 18px;
+            top: 14px;
+            font-size: 26px;
+            font-weight: bold;
+            color: #64748b;
+            cursor: pointer;
+        }
+        .zoomable-thumb {
+            cursor: zoom-in;
+            transition: transform 0.2s;
+        }
+        .zoomable-thumb:hover {
+            transform: scale(1.01);
+        }
+
+        /* Fullscreen Lightbox Zoom View */
+        .lightbox-overlay {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.92);
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .lightbox-img {
+            max-width: 90%;
+            max-height: 85%;
+            transition: transform 0.15s ease-out;
+            transform-origin: center center;
+            user-select: none;
+            cursor: grab;
+        }
+        .lightbox-controls {
+            position: absolute;
+            bottom: 25px;
+            display: flex;
+            gap: 15px;
+            z-index: 10001;
+        }
+        .zoom-btn {
+            background: rgba(255, 255, 255, 0.25);
+            color: #fff;
+            border: 1px solid rgba(255,255,255,0.4);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: bold;
+            backdrop-filter: blur(5px);
+        }
+        .zoom-btn:hover {
+            background: rgba(255, 255, 255, 0.45);
+        }
+        .lightbox-close {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            color: #fff;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 10001;
         }
     </style>
 </head>
-<body>
+<body style="background: #f1f5f9; padding: 20px;">
 
-    <nav class="navbar" style="display: flex; justify-content: space-between; align-items: center; padding: 12px 20px; flex-wrap: wrap; gap: 10px;">
-        <div class="nav-brand" style="display: flex; align-items: center; gap: 8px; font-weight: bold;">
-            <svg width="28" height="28" viewBox="0 0 120 120">
-                <rect width="120" height="120" rx="28" fill="#2563eb"/>
-                <path d="M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z" fill="#ffffff"/>
-                <circle cx="60" cy="52" r="12" fill="#2563eb"/>
-                <circle cx="60" cy="52" r="6" fill="#38bdf8"/>
-            </svg>
-            CivicSense <span class="ai-badge">AI Core</span>
-        </div>
+    <div style="max-width: 1250px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+        
+        <div class="admin-header-flex">
+            <div>
+                <h1 id="admin-title" style="margin: 0; font-size: 22px; color: #0f172a; display: flex; align-items: center; gap: 8px;">
+                    <svg width="26" height="26" viewBox="0 0 120 120">
+                        <rect width="120" height="120" rx="28" fill="#2563eb"/>
+                        <path d="M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z" fill="#ffffff"/>
+                        <circle cx="60" cy="52" r="12" fill="#2563eb"/>
+                        <circle cx="60" cy="52" r="6" fill="#38bdf8"/>
+                    </svg>
+                    CivicSense-Nipane Grampanchayat Admin Portal
+                </h1>
+                <p id="admin-subtitle" style="margin: 4px 0 0 0; color: #64748b; font-size: 13px;">Real-Time Citizen Grievance & AI Prioritization Console</p>
+            </div>
 
-        <div class="creator-badge">
-            <div class="creator-title">SYSTEM ARCHITECT & LEAD</div>
-            <div class="creator-name">Pranav Sagar Patil</div>
-            <a href="https://instagram.com/pranav__jagtap.0001" target="_blank">📸 @pranav__jagtap.0001</a>
-        </div>
+            <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
+                <select id="adminLangSelect" onchange="changeLanguage(this.value)" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                    <option value="en">English</option>
+                    <option value="hi">हिंदी</option>
+                    <option value="mr">मराठी</option>
+                </select>
 
-        <div class="nav-links">
-            <button class="nav-btn active" id="nav-home" onclick="switchTab('home')">Home</button>
-            <button class="nav-btn" id="nav-report" onclick="switchTab('report')">Report</button>
-            <button class="nav-btn" id="nav-tracker" onclick="switchTab('tracker')">Live Tracker</button>
-        </div>
-
-        <div class="lang-selector">
-            <select id="langSelect" onchange="changeLanguage(this.value)">
-                <option value="en">English</option>
-                <option value="hi">हिंदी</option>
-                <option value="mr">मराठी</option>
-            </select>
-        </div>
-    </nav>
-
-    <main class="main-content">
-        <!-- 1. HOME -->
-        <section id="view-home" class="view-panel active">
-            <div class="hero-card">
-                <h1 id="home-title">Intelligent Civic Grievance System</h1>
-                <p id="home-subtitle">Zero-delay local reporting with automated AI severity scoring & geo-duplicate detection.</p>
-                
-                <div class="stats-grid">
-                    <div class="stat-card">
-                        <h2 id="stat-total">0</h2>
-                        <span id="txt-stat-total">Total Issues</span>
-                    </div>
-                    <div class="stat-card stat-resolved">
-                        <h2 id="stat-resolved">0</h2>
-                        <span id="txt-stat-resolved">Resolved</span>
-                    </div>
-                    <div class="stat-card stat-critical">
-                        <h2 id="stat-critical">0</h2>
-                        <span id="txt-stat-critical">Critical / High</span>
-                    </div>
+                <div class="creator-badge">
+                    <div class="creator-title">SYSTEM ARCHITECT & LEAD</div>
+                    <div class="creator-name">Pranav Sagar Patil</div>
+                    <a href="https://instagram.com/pranav__jagtap.0001" target="_blank">📸 @pranav__jagtap.0001</a>
                 </div>
 
-                <div class="cta-row">
-                    <button class="primary-btn pulse" id="btn-report-now" onclick="switchTab('report')">📢 Report an Issue Now</button>
-                </div>
+                <a href="index.html" id="link-public-app" style="font-size: 13px; color: #2563eb; text-decoration: none; font-weight: 600;">← Open Public App</a>
             </div>
-        </section>
+        </div>
 
-        <!-- 2. REPORT -->
-        <section id="view-report" class="view-panel">
-            <div class="form-container">
-                <h2 id="form-heading">Report Civic Issue</h2>
-                <form id="civicForm">
-                    <label id="lbl-cat" for="category">Issue Category</label>
-                    <select id="category" required onchange="triggerAiAnalysis()">
-                        <option value="">-- Select Category --</option>
-                        <option value="Road / Pothole">Pothole / Broken Road</option>
-                        <option value="Garbage">Garbage Dump / Sanitation</option>
-                        <option value="Water Leakage">Water Pipe Leakage</option>
-                        <option value="Street Light">Broken Street Light / Electrical</option>
-                        <option value="Sewage Overflow">Sewage / Drain Overflow</option>
-                        <option value="Other">Other Problem</option>
-                    </select>
-
-                    <label id="lbl-desc" for="description">Problem Description</label>
-                    <textarea id="description" rows="3" placeholder="Describe issue (e.g. broken wire sparking, accident hazard)..." required oninput="triggerAiAnalysis()"></textarea>
-
-                    <div class="ai-preview-box">
-                        <div class="ai-meter-header">
-                            <span id="txt-ai-meter-title">🤖 AI Urgency Engine:</span>
-                            <span id="aiPriorityBadge" class="p-badge p-low">LOW (Score: 20)</span>
-                        </div>
-                        <p id="aiExplanation" class="ai-hint">AI scans description to dynamically calculate urgency score.</p>
-                    </div>
-
-                    <label id="lbl-photo" for="photo">Upload / Capture Image</label>
-                    <input type="file" id="photo" accept="image/*" capture="environment" required onchange="triggerAiAnalysis()">
-
-                    <label id="lbl-loc">Location Tagging</label>
-                    <button type="button" class="loc-btn" id="btn-detect-loc" onclick="fetchLiveLocation()">📍 Detect Live GPS Location</button>
-                    <div id="reportMap" class="map-box"></div>
-                    <p id="locationFeedback" class="status-msg">Location pending.</p>
-
-                    <div class="optional-box">
-                        <label id="lbl-optional-title" style="font-weight: bold; margin-bottom: 6px; display: block;">Citizen Details (Optional)</label>
-                        <input type="text" id="reporterName" placeholder="Your Name (Optional)" style="margin-bottom: 8px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                        <input type="tel" id="reporterPhone" placeholder="Mobile Number (Optional for WhatsApp updates)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                    </div>
-
-                    <button type="submit" id="submitBtn" class="submit-action-btn">Submit to CivicSense Engine</button>
-                </form>
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 15px; margin-bottom: 20px;">
+            <div style="display: flex; gap: 10px;">
+                <span style="background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeUrgent">🔴 High: 0</span>
+                <span style="background: #fef9c3; color: #ca8a04; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeMedium">🟡 Medium: 0</span>
+                <span style="background: #dcfce7; color: #16a34a; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeLow">🟢 Low: 0</span>
             </div>
-        </section>
 
-        <!-- 3. LIVE TRACKER -->
-        <section id="view-tracker" class="view-panel">
-            <div class="tracker-container">
-                <h2 id="tracker-title">Live Public Issue Tracker</h2>
-                <p id="tracker-subtitle" style="color: #64748b; font-size: 13px; margin-top: 4px;">Click on any marker to see status & AI priority.</p>
-                <div id="trackerMap" class="map-box-large"></div>
+            <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+                <label id="lbl-sort" style="font-size: 13px; font-weight: 600; color: #475569;">Sort By:</label>
+                <select id="sortBySelect" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                    <option value="newest">📅 Date: Newest First</option>
+                    <option value="oldest">📅 Date: Oldest First</option>
+                    <option value="highPriority">⚡ Urgency: High to Low</option>
+                    <option value="lowPriority">🌱 Urgency: Low to High</option>
+                </select>
+
+                <select id="priorityFilter" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
+                    <option value="All">All Priorities</option>
+                    <option value="HIGH">Critical / High Only</option>
+                    <option value="MEDIUM">Medium Only</option>
+                    <option value="LOW">Low Only</option>
+                </select>
             </div>
-        </section>
-    </main>
+        </div>
 
-    <footer style="text-align: center; padding: 25px 0; color: #94a3b8; font-size: 12px;">
-        CivicSense-Nipane • Built by Pranav Sagar Patil • <a href="admin.html" style="color: #94a3b8; text-decoration: none;">Authorized Portal</a>
-    </footer>
+        <div style="overflow-x: auto;">
+            <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
+                <thead>
+                    <tr style="border-bottom: 2px solid #e2e8f0; color: #475569; background: #f8fafc;">
+                        <th style="padding: 12px;" id="th-photo">Photo</th>
+                        <th style="padding: 12px;" id="th-date">Date & Time</th>
+                        <th style="padding: 12px;" id="th-desc">Issue & Description</th>
+                        <th style="padding: 12px;" id="th-citizen">Citizen Info</th>
+                        <th style="padding: 12px;" id="th-priority">AI Urgency</th>
+                        <th style="padding: 12px;" id="th-cluster">Geo-Cluster</th>
+                        <th style="padding: 12px;" id="th-status">Status</th>
+                        <th style="padding: 12px;" id="th-action">Action</th>
+                    </tr>
+                </thead>
+                <tbody id="adminTableBody"></tbody>
+            </table>
+        </div>
+    </div>
 
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <!-- Detail Modal -->
+    <div id="detailModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="closeModal()">&times;</span>
+            <h2 id="modalCategory" style="margin-top: 0; color: #0f172a;">Issue Details</h2>
+            <div style="position: relative;">
+                <img id="modalImg" src="" class="zoomable-thumb" style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;" alt="Issue Preview" onclick="openLightbox()">
+                <small style="color: #64748b; display: block; margin-bottom: 12px;">🔍 Click image to enlarge & zoom</small>
+            </div>
+            <p><strong><span id="txt-modal-dt">Date & Time</span>:</strong> <span id="modalDateTime"></span></p>
+            <p><strong><span id="txt-modal-urgency">AI Urgency</span>:</strong> <span id="modalPriority"></span></p>
+            <p><strong><span id="txt-modal-cit">Citizen Details</span>:</strong> <span id="modalReporter"></span></p>
+            <p><strong><span id="txt-modal-desc">Description</span>:</strong></p>
+            <div id="modalDesc" style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 12px;"></div>
+            <a id="modalMapLink" href="#" target="_blank" style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold;">📍 Open Live Spot on Google Maps</a>
+        </div>
+    </div>
+
+    <!-- Fullscreen Zoom Lightbox -->
+    <div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightboxOnBackdrop(event)">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <img id="lightboxImage" class="lightbox-img" src="" alt="Full Zoom Preview">
+        <div class="lightbox-controls">
+            <button class="zoom-btn" onclick="adjustZoom(0.25)">➕ Zoom In</button>
+            <button class="zoom-btn" onclick="adjustZoom(-0.25)">➖ Zoom Out</button>
+            <button class="zoom-btn" onclick="resetZoom()">🔄 Reset</button>
+        </div>
+    </div>
+
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
     <script src="script.js"></script>
