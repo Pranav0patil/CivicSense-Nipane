@@ -23,12 +23,19 @@ let currentLang = 'en';
 const CRITICAL_KEYWORDS = ["accident", "danger", "spark", "fire", "wire", "burst", "overflow", "death", "deep", "emergency", "current", "hospital", "school", "खतरा", "दुर्घटना", "तार", "आग", "गंभीर", "विद्युत", "धोका", "अपघात", "शॉक", "गळती", "पाणी", "लाईट", "करंट"];
 const MEDIUM_KEYWORDS = ["leak", "garbage", "smell", "block", "light", "pothole", "कचरा", "दुर्गंध", "खड्डा", "गंदगी", "बंद", "तुंबले", "रस्ता"];
 
+// Generate Unique 7-Character Report ID (Format: NIP-4120)
+function generateReportId() {
+    const num = Math.floor(1000 + Math.random() * 9000);
+    return `NIP-${num}`;
+}
+
 // Multilingual Dictionary
 const TRANSLATIONS = {
     en: {
         navHome: "Home",
         navReport: "Report",
         navTracker: "Live Tracker",
+        navStatus: "🔍 Track Status",
         homeTitle: "Intelligent Civic Grievance System",
         homeSubtitle: "Zero-delay local reporting with automated AI severity scoring & geo-duplicate detection.",
         totalIssues: "Total Issues",
@@ -58,6 +65,9 @@ const TRANSLATIONS = {
         submitBtn: "Submit to CivicSense Engine",
         trackerTitle: "Live Public Issue Tracker",
         trackerSubtitle: "Click on any marker to see status & AI priority.",
+        trackStatusTitle: "Track Grievance Status",
+        trackStatusSubtitle: "Enter your 7-character Report ID (e.g., NIP-4120) to check real-time progress.",
+        btnSearchStatus: "Search",
         adminTitle: "CivicSense-Nipane Grampanchayat Admin Portal",
         adminSubtitle: "Real-Time Citizen Grievance & AI Prioritization Console",
         openPublic: "← Open Public App",
@@ -79,6 +89,7 @@ const TRANSLATIONS = {
         priorityFilterMed: "Medium Only",
         priorityFilterLow: "Low Only",
         tableHeaders: {
+            id: "#ID",
             photo: "Photo",
             date: "Date & Time",
             desc: "Issue & Description",
@@ -102,6 +113,7 @@ const TRANSLATIONS = {
         navHome: "होम",
         navReport: "शिकायत दर्ज करें",
         navTracker: "लाइव ट्रैकर",
+        navStatus: "🔍 स्थिति जांचें",
         homeTitle: "स्मार्ट नागरिक शिकायत निवारण प्रणाली",
         homeSubtitle: "स्वचालित एआई प्राथमिकता और जीपीएस मैपिंग के साथ त्वरित ग्राम शिकायत निवारण।",
         totalIssues: "कुल समस्याएं",
@@ -131,6 +143,9 @@ const TRANSLATIONS = {
         submitBtn: "सिविकसेंस प्रणाली में भेजें",
         trackerTitle: "सार्वजनिक लाइव समस्या ट्रैकर",
         trackerSubtitle: "समस्या की स्थिति व एआई प्राथमिकता देखने के लिए मार्कर पर क्लिक करें।",
+        trackStatusTitle: "शिकायत की स्थिति जांचें",
+        trackStatusSubtitle: "प्रगति देखने के लिए अपनी 7-अक्षरों की रिपोर्ट आईडी (उदा. NIP-4120) दर्ज करें।",
+        btnSearchStatus: "खोजें",
         adminTitle: "सिविकसेंस-निपाणे ग्रामपंचायत एडमिन पोर्टल",
         adminSubtitle: "नागरिक शिकायत व एआई प्राथमिकता प्रबंधन प्रणाली",
         openPublic: "← पब्लिक ऐप खोलें",
@@ -152,6 +167,7 @@ const TRANSLATIONS = {
         priorityFilterMed: "मध्यम केवल",
         priorityFilterLow: "सामान्य केवल",
         tableHeaders: {
+            id: "#आईडी",
             photo: "फोटो",
             date: "दिनांक व समय",
             desc: "समस्या व विवरण",
@@ -175,6 +191,7 @@ const TRANSLATIONS = {
         navHome: "मुख्यपृष्ठ",
         navReport: "तक्रार नोंदणी",
         navTracker: "थेट ट्रॅकर",
+        navStatus: "🔍 तक्रार स्थिती",
         homeTitle: "स्मार्ट नागरी तक्रार निवारण प्रणाली",
         homeSubtitle: "स्वयंचलित एआय प्राधान्य आणि जीपीएस मॅपिंगद्वारे थेट ग्राम तक्रार निवारण.",
         totalIssues: "एकूण तक्रारी",
@@ -204,6 +221,9 @@ const TRANSLATIONS = {
         submitBtn: "सिव्हिकसेन्स प्रणालीमध्ये पाठवा",
         trackerTitle: "थेट नागरी समस्या ट्रॅकर",
         trackerSubtitle: "समस्येची स्थिती व एआय प्राधान्य पाहण्यासाठी मार्करवर क्लिक करा.",
+        trackStatusTitle: "तक्रार निवारण स्थिती",
+        trackStatusSubtitle: "थेट स्थिती तपासण्यासाठी आपला ७-अक्षरी रिपोर्ट आयडी (उदा. NIP-4120) टाका.",
+        btnSearchStatus: "शोधा",
         adminTitle: "सिव्हिकसेन्स-निपाणे ग्रामपंचायत ॲडमिन पोर्टल",
         adminSubtitle: "नागरी तक्रार व एआय प्राधान्य व्यवस्थापन प्रणाली",
         openPublic: "← पब्लिक ॲप उघडा",
@@ -225,6 +245,7 @@ const TRANSLATIONS = {
         priorityFilterMed: "मध्यम फक्त",
         priorityFilterLow: "सामान्य फक्त",
         tableHeaders: {
+            id: "#आयडी",
             photo: "छायाचित्र",
             date: "दिनांक आणि वेळ",
             desc: "समस्या व तपशील",
@@ -256,13 +277,15 @@ function changeLanguage(lang) {
     if (pSel) pSel.value = lang;
     if (aSel) aSel.value = lang;
 
-    // Public Dashboard
+    // Public Page Elements
     const navHome = document.getElementById("nav-home");
     const navReport = document.getElementById("nav-report");
     const navTracker = document.getElementById("nav-tracker");
+    const navStatus = document.getElementById("nav-status");
     if (navHome) navHome.innerText = t.navHome;
     if (navReport) navReport.innerText = t.navReport;
     if (navTracker) navTracker.innerText = t.navTracker;
+    if (navStatus) navStatus.innerText = t.navStatus;
 
     const homeTitle = document.getElementById("home-title");
     const homeSubtitle = document.getElementById("home-subtitle");
@@ -284,6 +307,9 @@ function changeLanguage(lang) {
     const submitBtn = document.getElementById("submitBtn");
     const trackerTitle = document.getElementById("tracker-title");
     const trackerSubtitle = document.getElementById("tracker-subtitle");
+    const trackStatusTitle = document.getElementById("track-status-title");
+    const trackStatusSubtitle = document.getElementById("track-status-subtitle");
+    const btnSearchStatus = document.getElementById("btn-search-status");
 
     if (homeTitle) homeTitle.innerText = t.homeTitle;
     if (homeSubtitle) homeSubtitle.innerText = t.homeSubtitle;
@@ -305,6 +331,9 @@ function changeLanguage(lang) {
     if (submitBtn && !submitBtn.disabled) submitBtn.innerText = t.submitBtn;
     if (trackerTitle) trackerTitle.innerText = t.trackerTitle;
     if (trackerSubtitle) trackerSubtitle.innerText = t.trackerSubtitle;
+    if (trackStatusTitle) trackStatusTitle.innerText = t.trackStatusTitle;
+    if (trackStatusSubtitle) trackStatusSubtitle.innerText = t.trackStatusSubtitle;
+    if (btnSearchStatus) btnSearchStatus.innerText = t.btnSearchStatus;
 
     const catSelect = document.getElementById("category");
     if (catSelect) {
@@ -319,7 +348,7 @@ function changeLanguage(lang) {
         catSelect.value = val;
     }
 
-    // Admin Dashboard
+    // Admin Page Elements
     const adminTitle = document.getElementById("admin-title");
     const adminSubtitle = document.getElementById("admin-subtitle");
     const linkPublic = document.getElementById("link-public-app");
@@ -372,6 +401,7 @@ function changeLanguage(lang) {
     }
 
     const ths = t.tableHeaders;
+    if (document.getElementById("th-id")) document.getElementById("th-id").innerText = ths.id;
     if (document.getElementById("th-photo")) document.getElementById("th-photo").innerText = ths.photo;
     if (document.getElementById("th-date")) document.getElementById("th-date").innerText = ths.date;
     if (document.getElementById("th-desc")) document.getElementById("th-desc").innerText = ths.desc;
@@ -515,7 +545,6 @@ function triggerAiAnalysis() {
     exp.innerText = analysis.explanation;
 }
 
-// Distance Calculation
 function getDistanceMeters(lat1, lon1, lat2, lon2) {
     const R = 6371e3;
     const φ1 = lat1 * Math.PI / 180;
@@ -528,7 +557,6 @@ function getDistanceMeters(lat1, lon1, lat2, lon2) {
     return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
 }
 
-// AI Semantic Problem Similarity Matcher
 function calculateSimilarity(text1, text2) {
     if (!text1 || !text2) return 0;
     const words1 = text1.toLowerCase().replace(/[^\w\s\u0900-\u097F]/gi, '').split(/\s+/).filter(w => w.length > 2);
@@ -585,6 +613,7 @@ if (civicForm) {
             
             const compressedBase64 = await compressPhoto(photoFile);
             const aiResult = calculatePriorityScore(cat, desc, true);
+            const customReportId = generateReportId();
 
             let clusterCount = 1;
             globalReports.forEach(r => {
@@ -600,6 +629,7 @@ if (civicForm) {
             }
 
             await db.collection("reports").add({
+                reportId: customReportId,
                 category: cat,
                 description: desc,
                 photo: compressedBase64,
@@ -616,10 +646,10 @@ if (civicForm) {
             });
 
             const successMsg = currentLang === 'mr' 
-                ? `तक्रार यशस्वीरित्या नोंदवली गेली!\nएआय प्राधान्य: ${aiResult.level}`
+                ? `तक्रार यशस्वीरित्या नोंदवली गेली!\n\nतुमचा रिपोर्ट आयडी: ${customReportId}\n(तक्रारीची स्थिती तपासण्यासाठी हा आयडी जपून ठेवा)\nएआय प्राधान्य: ${aiResult.level}`
                 : (currentLang === 'hi' 
-                    ? `शिकायत सफलतापूर्वक दर्ज की गई!\nएआई प्राथमिकता: ${aiResult.level}`
-                    : `Complaint lodged successfully!\nAI Priority: ${aiResult.level}`);
+                    ? `शिकायत सफलतापूर्वक दर्ज की गई!\n\nआपकी रिपोर्ट आईडी: ${customReportId}\n(स्थिति जांचने के लिए इस आईडी को सुरक्षित रखें)\nएआई प्राथमिकता: ${aiResult.level}`
+                    : `Complaint lodged successfully!\n\nYour Report ID: ${customReportId}\n(Save this ID to track your grievance status)\nAI Assigned Urgency: ${aiResult.level}`);
             
             alert(successMsg);
             civicForm.reset();
@@ -635,7 +665,48 @@ if (civicForm) {
     });
 }
 
-// 6. Real-Time Sync
+// 6. Public Grievance Status Tracker
+function trackCitizenReport() {
+    const input = document.getElementById("searchReportIdInput").value.trim().toUpperCase();
+    const resultCard = document.getElementById("statusResultCard");
+    if (!input) {
+        alert("Please enter a valid Report ID.");
+        return;
+    }
+
+    const matched = globalReports.find(r => (r.reportId || '').toUpperCase() === input);
+
+    if (matched) {
+        resultCard.style.display = "block";
+        document.getElementById("resReportId").innerText = matched.reportId;
+        
+        const badge = document.getElementById("resStatusBadge");
+        badge.innerText = matched.status;
+        if (matched.status === 'Resolved') {
+            badge.className = "p-badge p-low";
+        } else if (matched.status === 'In Progress') {
+            badge.className = "p-badge p-med";
+        } else {
+            badge.className = "p-badge p-high";
+        }
+
+        document.getElementById("resCategory").innerText = matched.category;
+        
+        let dateStr = "Recent";
+        if (matched.timestamp) {
+            const d = matched.timestamp.toDate();
+            dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
+        }
+        document.getElementById("resDate").innerText = dateStr;
+        document.getElementById("resPriority").innerText = `${matched.priorityLevel} (${matched.priorityScore || 20})`;
+        document.getElementById("resDesc").innerText = matched.description || "No description.";
+    } else {
+        resultCard.style.display = "none";
+        alert("No grievance report found matching this ID. Please check and try again.");
+    }
+}
+
+// 7. Real-Time Sync & Dynamic Linking
 db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     globalReports = [];
     let total = 0, resolved = 0, critical = 0, medium = 0, low = 0;
@@ -643,6 +714,10 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     snapshot.forEach(doc => {
         const data = doc.data();
         data.id = doc.id;
+        // Fallback for older reports without custom reportId
+        if (!data.reportId) {
+            data.reportId = `NIP-${data.id.substring(0, 4).toUpperCase()}`;
+        }
         globalReports.push(data);
 
         total++;
@@ -652,42 +727,35 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
         else low++;
     });
 
-    // Dynamic Calculation of Geo-Clusters & AI Problem Matches
+    // Dynamic Calculation of Cluster Lists and Same Problem Lists
     globalReports.forEach((r, idx) => {
-        // Recalculate Live 100m Geo-Cluster
-        let nearbyMatches = 1;
-        let nearbyGroupIds = [r.id];
-
-        // AI Problem Match
-        let sameMatches = 1;
-        let sameGroupIds = [r.id];
+        let nearbyList = [];
+        let sameList = [];
 
         globalReports.forEach((other, oIdx) => {
             if (idx !== oIdx) {
-                // Geo-Distance
+                // Geo-Distance < 100m
                 if (r.latitude && r.longitude && other.latitude && other.longitude) {
                     const dist = getDistanceMeters(r.latitude, r.longitude, other.latitude, other.longitude);
                     if (dist <= 100) {
-                        nearbyMatches++;
-                        nearbyGroupIds.push(other.id);
+                        nearbyList.push(other);
                     }
                 }
 
-                // AI Category + Text Similarity Match
+                // Similar Issue
                 if (r.category === other.category) {
                     const sim = calculateSimilarity(r.description, other.description);
                     if (sim >= 0.35 || (r.description && other.description && r.description.trim().toLowerCase() === other.description.trim().toLowerCase())) {
-                        sameMatches++;
-                        sameGroupIds.push(other.id);
+                        sameList.push(other);
                     }
                 }
             }
         });
 
-        r.liveNearbyCount = nearbyMatches;
-        r.nearbyGroupId = nearbyGroupIds.sort().join('_');
-        r.liveSameCount = sameMatches;
-        r.sameGroupId = sameGroupIds.sort().join('_');
+        r.nearbyReports = nearbyList;
+        r.sameReports = sameList;
+        r.liveNearbyCount = nearbyList.length + 1;
+        r.liveSameCount = sameList.length + 1;
     });
 
     const statTotal = document.getElementById('stat-total');
@@ -711,15 +779,25 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     }
 });
 
-// Group By + Sorting + Filter Controller
 function applySortingAndFiltering() {
     if (!document.getElementById('adminTableBody')) return;
 
     const groupBy = document.getElementById('groupBySelect') ? document.getElementById('groupBySelect').value : 'none';
     const sortType = document.getElementById('sortBySelect') ? document.getElementById('sortBySelect').value : 'newest';
     const filter = document.getElementById('priorityFilter') ? document.getElementById('priorityFilter').value : 'All';
+    const searchKeyword = document.getElementById('adminSearchInput') ? document.getElementById('adminSearchInput').value.trim().toLowerCase() : '';
 
     let filtered = [...globalReports];
+
+    // Search Filtering (ID, Category, Description)
+    if (searchKeyword) {
+        filtered = filtered.filter(r => 
+            (r.reportId && r.reportId.toLowerCase().includes(searchKeyword)) ||
+            (r.category && r.category.toLowerCase().includes(searchKeyword)) ||
+            (r.description && r.description.toLowerCase().includes(searchKeyword)) ||
+            (r.reporterName && r.reporterName.toLowerCase().includes(searchKeyword))
+        );
+    }
 
     if (filter !== "All") {
         filtered = filtered.filter(r => r.priorityLevel === filter);
@@ -749,22 +827,21 @@ function renderAdminTable(reports, groupBy = 'none') {
     const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
 
     if (reports.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="9" style="text-align: center; padding: 20px; color: #64748b;">No matching issues found.</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #64748b;">No matching issues found.</td></tr>`;
         return;
     }
 
-    // Helper to generate single row HTML
     function buildRowHtml(r) {
         const badgeColor = (r.priorityLevel === 'HIGH' || r.priorityLevel === 'CRITICAL') ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
         
-        const countGeo = r.liveNearbyCount || r.clusterCount || 1;
+        const countGeo = r.liveNearbyCount || 1;
         const clusterHtml = countGeo > 1 
-            ? `<span class="cluster-tag">⚠️ ${countGeo} ${t.clusterTag}</span>` 
+            ? `<span class="cluster-tag clickable-badge" title="Click to view related reports" onclick="event.stopPropagation(); openClusterListModal('${r.id}', 'geo')">⚠️ ${countGeo} ${t.clusterTag}</span>` 
             : `<span style="color:#94a3b8; font-size:11px;">${t.singleReport}</span>`;
 
         const countSame = r.liveSameCount || 1;
         const sameHtml = countSame > 1 
-            ? `<span class="ai-same-tag">🔁 ${countSame} Same</span>` 
+            ? `<span class="ai-same-tag clickable-badge" title="Click to view identical reports" onclick="event.stopPropagation(); openClusterListModal('${r.id}', 'same')">🔁 ${countSame} Same</span>` 
             : `<span style="color:#94a3b8; font-size:11px;">${t.uniqueIssue}</span>`;
         
         let dateStr = "Recent";
@@ -779,13 +856,14 @@ function renderAdminTable(reports, groupBy = 'none') {
 
         return `
             <tr class="table-row-hover" style="border-bottom: 1px solid #f1f5f9;">
-                <td style="padding: 10px;" onclick="openModal('${r.id}')"><img src="${r.photo}" style="width: 50px; height: 50px; border-radius: 8px; object-fit: cover;" alt="Issue"/></td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><span class="id-badge">${r.reportId}</span></td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><img src="${r.photo}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;" alt="Issue"/></td>
                 <td style="padding: 10px; font-size: 12px; color: #475569;" onclick="openModal('${r.id}')">${dateStr}</td>
                 <td style="padding: 10px;" onclick="openModal('${r.id}')"><strong>${r.category}</strong><br><small style="color:#64748b;">${(r.description || '').substring(0, 35)}...</small></td>
                 <td style="padding: 10px;" onclick="openModal('${r.id}')">${citizenInfo}</td>
                 <td style="padding: 10px;" onclick="openModal('${r.id}')"><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
-                <td style="padding: 10px;" onclick="openModal('${r.id}')">${clusterHtml}</td>
-                <td style="padding: 10px;" onclick="openModal('${r.id}')">${sameHtml}</td>
+                <td style="padding: 10px;">${clusterHtml}</td>
+                <td style="padding: 10px;">${sameHtml}</td>
                 <td style="padding: 10px;"><strong>${r.status}</strong></td>
                 <td style="padding: 10px;">
                     <button style="background:#0284c7; color:#fff; border:none; padding:5px 8px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="updateDocStatus('${r.id}', 'In Progress')">${t.btnProg}</button>
@@ -799,22 +877,20 @@ function renderAdminTable(reports, groupBy = 'none') {
     if (groupBy === 'none') {
         tbody.innerHTML = reports.map(buildRowHtml).join('');
     } else if (groupBy === 'geo') {
-        // Group by Nearby 100m Coordinates Cluster
         const groups = {};
         reports.forEach(r => {
-            const key = (r.liveNearbyCount > 1) ? `📍 100m Cluster Zone (${r.liveNearbyCount} Reports Together)` : `📍 Isolated / Single Reports`;
+            const key = (r.liveNearbyCount > 1) ? `📍 100m Cluster Zone (${r.liveNearbyCount} Reports Linked)` : `📍 Isolated / Single Reports`;
             if (!groups[key]) groups[key] = [];
             groups[key].push(r);
         });
 
         let fullHtml = "";
         for (const [groupName, items] of Object.entries(groups)) {
-            fullHtml += `<tr><td colspan="9" class="group-header-row">${groupName}</td></tr>`;
+            fullHtml += `<tr><td colspan="10" class="group-header-row">${groupName}</td></tr>`;
             fullHtml += items.map(buildRowHtml).join('');
         }
         tbody.innerHTML = fullHtml;
     } else if (groupBy === 'aiSame') {
-        // Group by AI Semantic Match (Category + Same Description)
         const groups = {};
         reports.forEach(r => {
             const key = (r.liveSameCount > 1) ? `🤖 AI Matched Group: "${r.category}" (${r.liveSameCount} Identical Reports)` : `🤖 Unique Individual Reports`;
@@ -824,14 +900,73 @@ function renderAdminTable(reports, groupBy = 'none') {
 
         let fullHtml = "";
         for (const [groupName, items] of Object.entries(groups)) {
-            fullHtml += `<tr><td colspan="9" class="group-header-row" style="background:#f3e8ff; color:#581c87;">${groupName}</td></tr>`;
+            fullHtml += `<tr><td colspan="10" class="group-header-row" style="background:#f3e8ff; color:#581c87;">${groupName}</td></tr>`;
             fullHtml += items.map(buildRowHtml).join('');
         }
         tbody.innerHTML = fullHtml;
     }
 }
 
-// Multilingual WhatsApp Notification
+// Interactive Cluster & Similar Inspector Modal
+function openClusterListModal(reportDocId, mode) {
+    const parentReport = globalReports.find(r => r.id === reportDocId);
+    if (!parentReport) return;
+
+    const listContainer = document.getElementById('clusterModalList');
+    const title = document.getElementById('clusterModalTitle');
+    const subtitle = document.getElementById('clusterModalSubtitle');
+    listContainer.innerHTML = "";
+
+    const related = mode === 'geo' ? parentReport.nearbyReports : parentReport.sameReports;
+
+    if (mode === 'geo') {
+        title.innerText = `📍 Nearby 100m Cluster (${related.length + 1} Reports)`;
+        subtitle.innerText = `Reports filed within 100m of issue #${parentReport.reportId}:`;
+    } else {
+        title.innerText = `🤖 AI Similar Problems (${related.length + 1} Reports)`;
+        subtitle.innerText = `Issues matching descriptions with issue #${parentReport.reportId}:`;
+    }
+
+    // Include the original report as Root
+    const allLinked = [parentReport, ...related];
+
+    allLinked.forEach((item, i) => {
+        let dateStr = "Recent";
+        if (item.timestamp) {
+            const d = item.timestamp.toDate();
+            dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        const isRoot = item.id === parentReport.id;
+        const card = document.createElement('div');
+        card.style.cssText = `display: flex; gap: 12px; align-items: center; background: ${isRoot ? '#eff6ff' : '#f8fafc'}; border: 1px solid ${isRoot ? '#93c5fd' : '#e2e8f0'}; padding: 10px; border-radius: 8px; cursor: pointer;`;
+        card.onclick = () => {
+            closeClusterModal();
+            openModal(item.id);
+        };
+
+        card.innerHTML = `
+            <img src="${item.photo}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover;" alt="issue">
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="id-badge">${item.reportId}</span>
+                    <span style="font-size: 11px; font-weight: bold; color: ${item.status === 'Resolved' ? '#16a34a' : '#2563eb'};">${item.status}</span>
+                </div>
+                <div style="font-size: 13px; font-weight: bold; margin-top: 2px;">${item.category} ${isRoot ? '<small style="color:#2563eb;">(Current)</small>' : ''}</div>
+                <div style="font-size: 11px; color: #64748b;">${(item.description || '').substring(0, 45)}... • ${dateStr}</div>
+            </div>
+        `;
+        listContainer.appendChild(card);
+    });
+
+    document.getElementById('clusterModal').style.display = "block";
+}
+
+function closeClusterModal() {
+    document.getElementById('clusterModal').style.display = "none";
+}
+
+// WhatsApp Updates
 function updateDocStatus(id, newStatus) {
     const report = globalReports.find(r => r.id === id);
     db.collection("reports").doc(id).update({ status: newStatus }).then(() => {
@@ -854,12 +989,12 @@ function updateDocStatus(id, newStatus) {
                 
                 if (lang === 'mr') {
                     const st = newStatus === 'Resolved' ? 'निवारण झाले (Resolved)' : 'प्रगतीपथावर (In Progress)';
-                    messageBody = `नमस्कार ${citizenName}, आपण सिव्हिकसेन्स-निपाणे वर नोंदवलेली तक्रार "${report.category}" आता: ${st} झाली आहे. परिसराच्या स्वच्छतेसाठी व सुरक्षेसाठी सहकार्य केल्याबद्दल धन्यवाद! - ग्रामपंचायत निपाणे.`;
+                    messageBody = `नमस्कार ${citizenName}, आपण नोंदवलेली तक्रार [ID: ${report.reportId}] "${report.category}" आता: ${st} झाली आहे. परिसराच्या स्वच्छतेसाठी व सुरक्षेसाठी सहकार्य केल्याबद्दल धन्यवाद! - ग्रामपंचायत निपाणे.`;
                 } else if (lang === 'hi') {
                     const st = newStatus === 'Resolved' ? 'हल कर दी गई (Resolved)' : 'प्रगति पर है (In Progress)';
-                    messageBody = `नमस्ते ${citizenName}, सिविकसेंस-निपाणे पर दर्ज की गई आपकी शिकायत "${report.category}" अब: ${st} हो चुकी है। ग्राम स्वच्छता और सुरक्षा में सहयोग के लिए धन्यवाद! - ग्रामपंचायत निपाणे।`;
+                    messageBody = `नमस्ते ${citizenName}, आपकी शिकायत [ID: ${report.reportId}] "${report.category}" अब: ${st} हो चुकी है। ग्राम स्वच्छता और सुरक्षा में सहयोग के लिए धन्यवाद! - ग्रामपंचायत निपाणे।`;
                 } else {
-                    messageBody = `Hello ${citizenName}, your grievance regarding "${report.category}" reported at CivicSense-Nipane has been marked as: ${newStatus.toUpperCase()}. Thank you for helping keep our locality clean and safe! - Grampanchayat Nipane.`;
+                    messageBody = `Hello ${citizenName}, your grievance [ID: ${report.reportId}] regarding "${report.category}" has been marked as: ${newStatus.toUpperCase()}. Thank you for helping keep our locality clean and safe! - Grampanchayat Nipane.`;
                 }
 
                 window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageBody)}`, '_blank');
@@ -874,7 +1009,7 @@ function deleteDocReport(id) {
     }
 }
 
-// Modal & Lightbox Controls
+// Modal & Lightbox
 let currentZoom = 1;
 
 function openModal(id) {
@@ -886,6 +1021,9 @@ function openModal(id) {
         const d = r.timestamp.toDate();
         dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
     }
+
+    const modalIdBadge = document.getElementById('modalReportIdBadge');
+    if (modalIdBadge) modalIdBadge.innerText = r.reportId || 'NIP-0000';
 
     document.getElementById('modalCategory').innerText = `${r.category} (${r.status})`;
     document.getElementById('modalImg').src = r.photo;
@@ -946,9 +1084,9 @@ window.addEventListener('wheel', function(e) {
 
 window.onclick = function(event) {
     const modal = document.getElementById('detailModal');
-    if (event.target === modal) {
-        closeModal();
-    }
+    const clusterModal = document.getElementById('clusterModal');
+    if (event.target === modal) closeModal();
+    if (event.target === clusterModal) closeClusterModal();
 };
 
 function renderTrackerMarkers() {
@@ -957,7 +1095,7 @@ function renderTrackerMarkers() {
         if (r.latitude && r.longitude) {
             L.marker([r.latitude, r.longitude])
              .addTo(trackerMap)
-             .bindPopup(`<b>${r.category}</b><br>Priority: ${r.priorityLevel}<br>Status: ${r.status}`);
+             .bindPopup(`<b>#${r.reportId} - ${r.category}</b><br>Priority: ${r.priorityLevel}<br>Status: ${r.status}`);
         }
     });
 }
