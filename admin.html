@@ -55,6 +55,25 @@
             font-size: 13px;
             padding: 8px 12px;
         }
+        .id-badge {
+            background: #f1f5f9;
+            color: #1e293b;
+            padding: 3px 6px;
+            border-radius: 4px;
+            font-family: monospace;
+            font-weight: 700;
+            font-size: 12px;
+            border: 1px solid #cbd5e1;
+            white-space: nowrap;
+        }
+        .clickable-badge {
+            cursor: pointer;
+            transition: transform 0.15s ease;
+        }
+        .clickable-badge:hover {
+            transform: scale(1.06);
+            opacity: 0.9;
+        }
         .ai-same-tag {
             background: #ede9fe;
             color: #6b21a8;
@@ -64,7 +83,7 @@
             font-weight: bold;
             display: inline-block;
         }
-        /* Detail Modal */
+        /* Modals */
         .modal {
             display: none;
             position: fixed;
@@ -160,7 +179,7 @@
 </head>
 <body style="background: #f1f5f9; padding: 20px;">
 
-    <div style="max-width: 1300px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    <div style="max-width: 1350px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         
         <div class="admin-header-flex">
             <div>
@@ -193,7 +212,7 @@
             </div>
         </div>
 
-        <!-- Controls Toolbar -->
+        <!-- Metric Badges & Filter Toolbar -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <div style="display: flex; gap: 10px;">
                 <span style="background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeUrgent">🔴 High: 0</span>
@@ -202,7 +221,10 @@
             </div>
 
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <!-- Group By View Selector -->
+                <!-- ID & Keyword Search Bar -->
+                <input type="text" id="adminSearchInput" oninput="applySortingAndFiltering()" placeholder="🔍 Search ID / Category..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; width: 170px;">
+
+                <!-- View Mode -->
                 <label id="lbl-group" style="font-size: 13px; font-weight: 600; color: #475569;">View Mode:</label>
                 <select id="groupBySelect" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 2px solid #2563eb; background: #eff6ff; font-weight: 600; font-size: 13px; color: #1e40af;">
                     <option value="none">📋 Default (Flat List)</option>
@@ -233,6 +255,7 @@
             <table style="width: 100%; border-collapse: collapse; text-align: left; font-size: 14px;">
                 <thead>
                     <tr style="border-bottom: 2px solid #e2e8f0; color: #475569; background: #f8fafc;">
+                        <th style="padding: 12px;" id="th-id">#ID</th>
                         <th style="padding: 12px;" id="th-photo">Photo</th>
                         <th style="padding: 12px;" id="th-date">Date & Time</th>
                         <th style="padding: 12px;" id="th-desc">Issue & Description</th>
@@ -253,7 +276,10 @@
     <div id="detailModal" class="modal">
         <div class="modal-content">
             <span class="close-btn" onclick="closeModal()">&times;</span>
-            <h2 id="modalCategory" style="margin-top: 0; color: #0f172a;">Issue Details</h2>
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                <span id="modalReportIdBadge" class="id-badge" style="font-size: 14px; background: #eff6ff; color: #1d4ed8; border-color: #93c5fd;"></span>
+                <h2 id="modalCategory" style="margin: 0; color: #0f172a; font-size: 20px;">Issue Details</h2>
+            </div>
             <div style="position: relative;">
                 <img id="modalImg" src="" class="zoomable-thumb" style="width: 100%; max-height: 350px; object-fit: cover; border-radius: 8px; margin-bottom: 6px;" alt="Issue Preview" onclick="openLightbox()">
                 <small style="color: #64748b; display: block; margin-bottom: 12px;">🔍 Click image to enlarge & zoom</small>
@@ -264,6 +290,16 @@
             <p><strong><span id="txt-modal-desc">Description</span>:</strong></p>
             <div id="modalDesc" style="background: #f8fafc; padding: 10px; border-radius: 6px; margin-bottom: 12px;"></div>
             <a id="modalMapLink" href="#" target="_blank" style="display: inline-block; background: #2563eb; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 6px; font-weight: bold;">📍 Open Live Spot on Google Maps</a>
+        </div>
+    </div>
+
+    <!-- Interactive Cluster / Similar List Modal -->
+    <div id="clusterModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <span class="close-btn" onclick="closeClusterModal()">&times;</span>
+            <h3 id="clusterModalTitle" style="margin-top: 0; color: #0f172a;">Related Reports</h3>
+            <p id="clusterModalSubtitle" style="color: #64748b; font-size: 13px;"></p>
+            <div id="clusterModalList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
         </div>
     </div>
 
