@@ -18,6 +18,7 @@ let reportMap, trackerMap;
 let reportMarker = null;
 let globalReports = [];
 let currentLang = 'en';
+let selectedPhotoFile = null;
 
 // Advanced NLP Keywords
 const CRITICAL_KEYWORDS = ["accident", "danger", "spark", "fire", "wire", "burst", "overflow", "death", "deep", "emergency", "current", "hospital", "school", "खतरा", "दुर्घटना", "तार", "आग", "गंभीर", "विद्युत", "धोका", "अपघात", "शॉक", "गळती", "पाणी", "लाईट", "करंट"];
@@ -56,7 +57,9 @@ const TRANSLATIONS = {
         lblDesc: "Problem Description",
         descPlaceholder: "Describe issue (e.g. broken wire sparking, accident hazard)...",
         aiMeterTitle: "🤖 AI Urgency Engine:",
-        lblPhoto: "Upload / Capture Image",
+        lblPhoto: "Issue Photo (Camera or Gallery)",
+        btnTakePhoto: "📷 Open Camera",
+        btnPickGallery: "📁 Gallery / Files",
         lblLoc: "Location Tagging",
         btnLoc: "📍 Detect Live GPS Location",
         lblOptional: "Citizen Details (Optional)",
@@ -66,7 +69,7 @@ const TRANSLATIONS = {
         trackerTitle: "Live Public Issue Tracker",
         trackerSubtitle: "Click on any marker to see status & AI priority.",
         trackStatusTitle: "Track Grievance Status",
-        trackStatusSubtitle: "Enter your 7-character Report ID (e.g., NIP-4120) to check real-time progress.",
+        trackStatusSubtitle: "Enter your 7-character Report ID (e.g., NIP-5479) to check real-time progress.",
         btnSearchStatus: "Search",
         adminTitle: "CivicSense-Nipane Grampanchayat Admin Portal",
         adminSubtitle: "Real-Time Citizen Grievance & AI Prioritization Console",
@@ -134,7 +137,9 @@ const TRANSLATIONS = {
         lblDesc: "समस्या का विवरण",
         descPlaceholder: "समस्या का विवरण लिखें (उदा. टूटा हुआ तार, दुर्घटना की संभावना)...",
         aiMeterTitle: "🤖 एआई प्राथमिकता इंजन:",
-        lblPhoto: "फोटो अपलोड या कैप्चर करें",
+        lblPhoto: "समस्या की फोटो (कैमरा या गैलरी)",
+        btnTakePhoto: "📷 कैमरा खोलें",
+        btnPickGallery: "📁 गैलरी / फाइल्स",
         lblLoc: "स्थान का चयन",
         btnLoc: "📍 लाइव जीपीएस स्थान चुनें",
         lblOptional: "नागरिक विवरण (ऐच्छिक)",
@@ -144,7 +149,7 @@ const TRANSLATIONS = {
         trackerTitle: "सार्वजनिक लाइव समस्या ट्रैकर",
         trackerSubtitle: "समस्या की स्थिति व एआई प्राथमिकता देखने के लिए मार्कर पर क्लिक करें।",
         trackStatusTitle: "शिकायत की स्थिति जांचें",
-        trackStatusSubtitle: "प्रगति देखने के लिए अपनी 7-अक्षरों की रिपोर्ट आईडी (उदा. NIP-4120) दर्ज करें।",
+        trackStatusSubtitle: "प्रगति देखने के लिए अपनी 7-अक्षरों की रिपोर्ट आईडी (उदा. NIP-5479) दर्ज करें।",
         btnSearchStatus: "खोजें",
         adminTitle: "सिविकसेंस-निपाणे ग्रामपंचायत एडमिन पोर्टल",
         adminSubtitle: "नागरिक शिकायत व एआई प्राथमिकता प्रबंधन प्रणाली",
@@ -212,7 +217,9 @@ const TRANSLATIONS = {
         lblDesc: "समस्येचे सविस्तर वर्णन",
         descPlaceholder: "समस्येचे वर्णन लिहा (उदा. तुटलेली विजेची वायर, अपघात धोका)...",
         aiMeterTitle: "🤖 एआय प्राधान्य इंजिन:",
-        lblPhoto: "फोटो अपलोड किंवा कॅमेरा वापरा",
+        lblPhoto: "समस्येचा फोटो (कॅमेरा किंवा गॅलरी)",
+        btnTakePhoto: "📷 कॅमेरा उघडा",
+        btnPickGallery: "📁 गॅलरी / फाइल्स",
         lblLoc: "स्थान निश्चिती",
         btnLoc: "📍 थेट जीपीएस स्थान निवडा",
         lblOptional: "नागरिकाची माहिती (ऐच्छिक)",
@@ -222,7 +229,7 @@ const TRANSLATIONS = {
         trackerTitle: "थेट नागरी समस्या ट्रॅकर",
         trackerSubtitle: "समस्येची स्थिती व एआय प्राधान्य पाहण्यासाठी मार्करवर क्लिक करा.",
         trackStatusTitle: "तक्रार निवारण स्थिती",
-        trackStatusSubtitle: "थेट स्थिती तपासण्यासाठी आपला ७-अक्षरी रिपोर्ट आयडी (उदा. NIP-4120) टाका.",
+        trackStatusSubtitle: "थेट स्थिती तपासण्यासाठी आपला ७-अक्षरी रिपोर्ट आयडी (उदा. NIP-5479) टाका.",
         btnSearchStatus: "शोधा",
         adminTitle: "सिव्हिकसेन्स-निपाणे ग्रामपंचायत ॲडमिन पोर्टल",
         adminSubtitle: "नागरी तक्रार व एआय प्राधान्य व्यवस्थापन प्रणाली",
@@ -299,6 +306,8 @@ function changeLanguage(lang) {
     const descField = document.getElementById("description");
     const txtAiMeter = document.getElementById("txt-ai-meter-title");
     const lblPhoto = document.getElementById("lbl-photo");
+    const btnTakePhoto = document.getElementById("btn-take-photo");
+    const btnPickGallery = document.getElementById("btn-pick-gallery");
     const lblLoc = document.getElementById("lbl-loc");
     const btnLoc = document.getElementById("btn-detect-loc");
     const lblOptional = document.getElementById("lbl-optional-title");
@@ -323,6 +332,8 @@ function changeLanguage(lang) {
     if (descField) descField.placeholder = t.descPlaceholder;
     if (txtAiMeter) txtAiMeter.innerText = t.aiMeterTitle;
     if (lblPhoto) lblPhoto.innerText = t.lblPhoto;
+    if (btnTakePhoto) btnTakePhoto.innerText = t.btnTakePhoto;
+    if (btnPickGallery) btnPickGallery.innerText = t.btnPickGallery;
     if (lblLoc) lblLoc.innerText = t.lblLoc;
     if (btnLoc) btnLoc.innerText = t.btnLoc;
     if (lblOptional) lblOptional.innerText = t.lblOptional;
@@ -483,7 +494,24 @@ function fetchLiveLocation() {
     }
 }
 
-// 3. Multi-Factor AI Urgency Engine
+// 3. Photo Selection Handler (Camera or Gallery)
+function handlePhotoSelection(inputEl) {
+    if (inputEl.files && inputEl.files[0]) {
+        selectedPhotoFile = inputEl.files[0];
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photoPreviewThumb').src = e.target.result;
+            document.getElementById('photoFeedbackBox').style.display = 'flex';
+            document.getElementById('photoFileName').innerText = selectedPhotoFile.name || "Image ready to upload";
+        };
+        reader.readAsDataURL(selectedPhotoFile);
+
+        triggerAiAnalysis();
+    }
+}
+
+// 4. Multi-Factor AI Urgency Engine
 function calculatePriorityScore(category, text, photoAttached) {
     let score = 20;
     let reasons = [];
@@ -531,13 +559,12 @@ function calculatePriorityScore(category, text, photoAttached) {
 function triggerAiAnalysis() {
     const catEl = document.getElementById("category");
     const descEl = document.getElementById("description");
-    const photoEl = document.getElementById("photo");
     const badge = document.getElementById("aiPriorityBadge");
     const exp = document.getElementById("aiExplanation");
 
     if (!catEl || !descEl || !badge || !exp) return;
 
-    const hasPhoto = photoEl && photoEl.files && photoEl.files.length > 0;
+    const hasPhoto = selectedPhotoFile !== null;
     const analysis = calculatePriorityScore(catEl.value, descEl.value, hasPhoto);
     
     badge.className = `p-badge ${analysis.badgeClass}`;
@@ -568,7 +595,7 @@ function calculateSimilarity(text1, text2) {
     return (2.0 * common.length) / (words1.length + words2.length);
 }
 
-// 4. Image Compression
+// 5. Image Compression
 function compressPhoto(file) {
     return new Promise((resolve) => {
         const reader = new FileReader();
@@ -590,11 +617,17 @@ function compressPhoto(file) {
     });
 }
 
-// 5. Submit Handler
+// 6. Submit Handler
 const civicForm = document.getElementById('civicForm');
 if (civicForm) {
     civicForm.addEventListener('submit', async (e) => {
         e.preventDefault();
+
+        if (!selectedPhotoFile) {
+            alert(currentLang === 'mr' ? "कृपया समस्येचा फोटो घ्या किंवा निवडा." : (currentLang === 'hi' ? "कृपया समस्या का फोटो लें या चुनें।" : "Please take or choose a photo of the issue."));
+            return;
+        }
+
         if (!userLocation.latitude) {
             alert(currentLang === 'mr' ? "कृपया नकाशावर समस्येचे ठिकाण निवडा." : (currentLang === 'hi' ? "कृपया मानचित्र पर समस्या का स्थान चुनें।" : "Please pin issue location on the map."));
             return;
@@ -607,11 +640,10 @@ if (civicForm) {
         try {
             const cat = document.getElementById('category').value;
             const desc = document.getElementById('description').value;
-            const photoFile = document.getElementById('photo').files[0];
             const reporterName = document.getElementById('reporterName').value.trim() || "";
             const reporterPhone = document.getElementById('reporterPhone').value.trim() || "";
             
-            const compressedBase64 = await compressPhoto(photoFile);
+            const compressedBase64 = await compressPhoto(selectedPhotoFile);
             const aiResult = calculatePriorityScore(cat, desc, true);
             const customReportId = generateReportId();
 
@@ -653,6 +685,8 @@ if (civicForm) {
             
             alert(successMsg);
             civicForm.reset();
+            selectedPhotoFile = null;
+            document.getElementById('photoFeedbackBox').style.display = 'none';
             userLocation = { latitude: null, longitude: null };
             if (reportMarker && reportMap) reportMap.removeLayer(reportMarker);
             switchTab('home');
@@ -665,7 +699,7 @@ if (civicForm) {
     });
 }
 
-// 6. Public Grievance Status Tracker
+// 7. Public Grievance Status Tracker
 function trackCitizenReport() {
     const input = document.getElementById("searchReportIdInput").value.trim().toUpperCase();
     const resultCard = document.getElementById("statusResultCard");
@@ -706,7 +740,7 @@ function trackCitizenReport() {
     }
 }
 
-// 7. Real-Time Sync & Dynamic Linking
+// 8. Real-Time Sync & Dynamic Linking
 db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     globalReports = [];
     let total = 0, resolved = 0, critical = 0, medium = 0, low = 0;
@@ -715,7 +749,7 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
         const data = doc.data();
         data.id = doc.id;
 
-        // Ensure strictly NIP-XXXX format (where XXXX is 4 pure numbers)
+        // Strictly enforce 3 letters + 4 pure digits (NIP-XXXX)
         if (!data.reportId || !/^NIP-\d{4}$/.test(data.reportId)) {
             let hash = 0;
             for (let i = 0; i < data.id.length; i++) {
@@ -795,7 +829,6 @@ function applySortingAndFiltering() {
 
     let filtered = [...globalReports];
 
-    // Search Filtering (ID, Category, Description, Citizen Name)
     if (searchKeyword) {
         filtered = filtered.filter(r => 
             (r.reportId && r.reportId.toLowerCase().includes(searchKeyword)) ||
@@ -913,7 +946,7 @@ function renderAdminTable(reports, groupBy = 'none') {
     }
 }
 
-// Interactive Cluster & Similar Inspector Modal
+// Cluster Inspector Modal
 function openClusterListModal(reportDocId, mode) {
     const parentReport = globalReports.find(r => r.id === reportDocId);
     if (!parentReport) return;
