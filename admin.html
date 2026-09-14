@@ -83,7 +83,7 @@
             font-weight: bold;
             display: inline-block;
         }
-        /* Modals */
+        /* Detail Modal */
         .modal {
             display: none;
             position: fixed;
@@ -212,7 +212,6 @@
             </div>
         </div>
 
-        <!-- Metric Badges & Filter Toolbar -->
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
             <div style="display: flex; gap: 10px;">
                 <span style="background: #fee2e2; color: #dc2626; padding: 6px 14px; border-radius: 20px; font-weight: 600; font-size: 13px;" id="badgeUrgent">🔴 High: 0</span>
@@ -221,10 +220,8 @@
             </div>
 
             <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
-                <!-- ID & Keyword Search Bar -->
                 <input type="text" id="adminSearchInput" oninput="applySortingAndFiltering()" placeholder="🔍 Search ID / Category..." style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px; width: 170px;">
 
-                <!-- View Mode -->
                 <label id="lbl-group" style="font-size: 13px; font-weight: 600; color: #475569;">View Mode:</label>
                 <select id="groupBySelect" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 2px solid #2563eb; background: #eff6ff; font-weight: 600; font-size: 13px; color: #1e40af;">
                     <option value="none">📋 Default (Flat List)</option>
@@ -232,7 +229,6 @@
                     <option value="aiSame">🤖 Group by Same Problems (AI Matched)</option>
                 </select>
 
-                <!-- Sorter -->
                 <label id="lbl-sort" style="font-size: 13px; font-weight: 600; color: #475569;">Sort By:</label>
                 <select id="sortBySelect" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
                     <option value="newest">📅 Date: Newest First</option>
@@ -241,7 +237,6 @@
                     <option value="lowPriority">🌱 Urgency: Low to High</option>
                 </select>
 
-                <!-- Priority Filter -->
                 <select id="priorityFilter" onchange="applySortingAndFiltering()" style="padding: 6px 12px; border-radius: 6px; border: 1px solid #cbd5e1; font-size: 13px;">
                     <option value="All">All Priorities</option>
                     <option value="HIGH">Critical / High Only</option>
