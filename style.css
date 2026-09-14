@@ -310,3 +310,6 @@ th {
 
 .btn-prog { background: #0284c7; color: white; }
 .btn-res { background: #16a34a; color: white; }
+.leaflet-control-attribution {
+    display: none !important;
+}
