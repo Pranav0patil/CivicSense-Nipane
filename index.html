@@ -149,7 +149,8 @@
                     </div>
 
                     <label id="lbl-photo" for="photo">Upload / Capture Image</label>
-                    <input type="file" id="photo" accept="image/*" capture="environment" required onchange="triggerAiAnalysis()">
+                    <!-- System File Chooser: Enables Camera, Gallery, and Files options -->
+                    <input type="file" id="photo" accept="image/*" required onchange="triggerAiAnalysis()">
 
                     <label id="lbl-loc">Location Tagging</label>
                     <button type="button" class="loc-btn" id="btn-detect-loc" onclick="fetchLiveLocation()">📍 Detect Live GPS Location</button>
