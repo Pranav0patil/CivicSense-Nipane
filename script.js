@@ -20,6 +20,9 @@ let globalReports = [];
 let currentLang = 'en';
 let selectedPhotoFile = null;
 
+// Fixed Security PIN for Admin Console
+const ADMIN_SECURITY_PIN = "2486";
+
 // Advanced NLP Keywords
 const CRITICAL_KEYWORDS = ["accident", "danger", "spark", "fire", "wire", "burst", "overflow", "death", "deep", "emergency", "current", "hospital", "school", "खतरा", "दुर्घटना", "तार", "आग", "गंभीर", "विद्युत", "धोका", "अपघात", "शॉक", "गळती", "पाणी", "लाईट", "करंट"];
 const MEDIUM_KEYWORDS = ["leak", "garbage", "smell", "block", "light", "pothole", "कचरा", "दुर्गंध", "खड्डा", "गंदगी", "बंद", "तुंबले", "रस्ता"];
@@ -273,6 +276,50 @@ const TRANSLATIONS = {
         uniqueIssue: "एकमेव"
     }
 };
+
+// Admin Authentication Functions
+function checkAdminAuth() {
+    const lockScreen = document.getElementById('adminLockScreen');
+    if (!lockScreen) return;
+
+    const isAuth = sessionStorage.getItem('civicSenseAdminAuth');
+    if (isAuth === 'true') {
+        lockScreen.style.display = 'none';
+    } else {
+        lockScreen.style.display = 'flex';
+        const pinInput = document.getElementById('adminPinInput');
+        if (pinInput) {
+            pinInput.value = '';
+            pinInput.focus();
+            pinInput.onkeypress = function (e) {
+                if (e.key === 'Enter') verifyAdminPin();
+            };
+        }
+    }
+}
+
+function verifyAdminPin() {
+    const pinInput = document.getElementById('adminPinInput');
+    const errorMsg = document.getElementById('pinErrorMsg');
+    const lockScreen = document.getElementById('adminLockScreen');
+
+    if (pinInput && pinInput.value === ADMIN_SECURITY_PIN) {
+        sessionStorage.setItem('civicSenseAdminAuth', 'true');
+        if (lockScreen) lockScreen.style.display = 'none';
+        if (errorMsg) errorMsg.style.display = 'none';
+    } else {
+        if (errorMsg) errorMsg.style.display = 'block';
+        if (pinInput) {
+            pinInput.value = '';
+            pinInput.focus();
+        }
+    }
+}
+
+function adminLogout() {
+    sessionStorage.removeItem('civicSenseAdminAuth');
+    window.location.reload();
+}
 
 function changeLanguage(lang) {
     currentLang = lang;
@@ -1139,6 +1186,7 @@ function renderTrackerMarkers() {
 }
 
 window.onload = function() {
+    checkAdminAuth();
     initMaps();
     changeLanguage(currentLang);
 };
