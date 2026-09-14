@@ -56,6 +56,29 @@
             display: none;
             box-shadow: 0 4px 6px -1px rgba(0,0,0,0.05);
         }
+        .photo-btn-group {
+            display: flex;
+            gap: 10px;
+            margin-top: 8px;
+        }
+        .photo-action-btn {
+            flex: 1;
+            padding: 10px;
+            border-radius: 6px;
+            border: none;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 13px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            transition: opacity 0.2s;
+        }
+        .photo-action-btn:hover {
+            opacity: 0.9;
+        }
     </style>
 </head>
 <body>
@@ -148,11 +171,31 @@
                         <p id="aiExplanation" class="ai-hint">AI scans description to dynamically calculate urgency score.</p>
                     </div>
 
-                    <label id="lbl-photo" for="photo">Upload / Capture Image</label>
-                    <!-- System File Chooser: Enables Camera, Gallery, and Files options -->
-                    <input type="file" id="photo" accept="image/*" required onchange="triggerAiAnalysis()">
+                    <!-- Dual Photo Input: Camera vs Gallery -->
+                    <label id="lbl-photo" style="display:block; margin-top: 15px; font-weight: 600;">Issue Photo (Camera or Gallery)</label>
+                    
+                    <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelection(this)">
+                    <input type="file" id="galleryInput" accept="image/*" style="display:none;" onchange="handlePhotoSelection(this)">
 
-                    <label id="lbl-loc">Location Tagging</label>
+                    <div class="photo-btn-group">
+                        <button type="button" class="photo-action-btn" id="btn-take-photo" style="background: #0284c7;" onclick="document.getElementById('cameraInput').click()">
+                            📷 Open Camera
+                        </button>
+                        <button type="button" class="photo-action-btn" id="btn-pick-gallery" style="background: #475569;" onclick="document.getElementById('galleryInput').click()">
+                            📁 Gallery / Files
+                        </button>
+                    </div>
+
+                    <!-- Photo Selection Preview Box -->
+                    <div id="photoFeedbackBox" style="display: none; align-items: center; gap: 12px; margin-top: 12px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
+                        <img id="photoPreviewThumb" src="" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #cbd5e1;" alt="Preview">
+                        <div>
+                            <span id="photoStatusText" style="font-size: 13px; color: #16a34a; font-weight: 700; display: block;">Photo Selected Successfully</span>
+                            <small id="photoFileName" style="color: #64748b; font-size: 11px;"></small>
+                        </div>
+                    </div>
+
+                    <label id="lbl-loc" style="margin-top: 15px; display: block;">Location Tagging</label>
                     <button type="button" class="loc-btn" id="btn-detect-loc" onclick="fetchLiveLocation()">📍 Detect Live GPS Location</button>
                     <div id="reportMap" class="map-box"></div>
                     <p id="locationFeedback" class="status-msg">Location pending.</p>
@@ -177,14 +220,14 @@
             </div>
         </section>
 
-        <!-- 4. TRACK GRIEVANCE STATUS BY ID -->
+        <!-- 4. TRACK STATUS BY 7-CHAR ID -->
         <section id="view-status" class="view-panel">
             <div class="form-container" style="max-width: 600px;">
                 <h2 id="track-status-title">Track Grievance Status</h2>
-                <p id="track-status-subtitle" style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Enter your 7-character Report ID (e.g., NIP-4120) to check real-time progress.</p>
+                <p id="track-status-subtitle" style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Enter your 7-character Report ID (e.g., NIP-5479) to check real-time progress.</p>
                 
                 <div style="display: flex; gap: 8px;">
-                    <input type="text" id="searchReportIdInput" placeholder="Enter Report ID (e.g. NIP-1234)" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; text-transform: uppercase;">
+                    <input type="text" id="searchReportIdInput" placeholder="Enter Report ID (e.g. NIP-5479)" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; text-transform: uppercase;">
                     <button type="button" class="loc-btn" id="btn-search-status" style="width: auto; margin-top: 0; padding: 0 20px;" onclick="trackCitizenReport()">Search</button>
                 </div>
 
