@@ -386,4 +386,93 @@
             <h3 style="margin-top: 0; color: #16a34a;">Mark Grievance as Resolved</h3>
             <p style="font-size: 13px; color: #64748b;">Upload a verified photo of the completed work (After Solution proof):</p>
             
-            <input type="file" id="resolvePhotoInput" accept="image/*" style="margin-bottom: 15px; width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-
+            <input type="file" id="resolvePhotoInput" accept="image/*" style="margin-bottom: 15px; width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-radius: 6px;">
+            
+            <div style="display: flex; gap: 10px; justify-content: flex-end;">
+                <button type="button" onclick="confirmResolveSubmission(false)" style="background: #94a3b8; color: #fff; border: none; padding: 8px 14px; border-radius: 6px; cursor: pointer;">Skip Photo</button>
+                <button type="button" onclick="confirmResolveSubmission(true)" style="background: #16a34a; color: #fff; border: none; padding: 8px 16px; border-radius: 6px; font-weight: bold; cursor: pointer;">Verify & Resolve</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Cluster / Similar List Modal -->
+    <div id="clusterModal" class="modal">
+        <div class="modal-content" style="max-width: 550px;">
+            <span class="close-btn" onclick="closeClusterModal()">&times;</span>
+            <h3 id="clusterModalTitle" style="margin-top: 0; color: #0f172a;">Related Reports</h3>
+            <p id="clusterModalSubtitle" style="color: #64748b; font-size: 13px;"></p>
+            <div id="clusterModalList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
+        </div>
+    </div>
+
+    <!-- Fullscreen Zoom Lightbox -->
+    <div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightboxOnBackdrop(event)">
+        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
+        <img id="lightboxImage" class="lightbox-img" src="" alt="Full Zoom Preview">
+        <div class="lightbox-controls">
+            <button class="zoom-btn" onclick="adjustZoom(0.25)">➕ Zoom In</button>
+            <button class="zoom-btn" onclick="adjustZoom(-0.25)">➖ Zoom Out</button>
+            <button class="zoom-btn" onclick="resetZoom()">🔄 Reset</button>
+        </div>
+    </div>
+
+    <!-- Printable Task Slip (Hidden in Web, Visible in Print) -->
+    <div id="printSection" style="display: none; padding: 25px; font-family: sans-serif; color: #0f172a;">
+        <div style="border: 2px solid #0f172a; padding: 20px; border-radius: 8px;">
+            <div style="display: flex; justify-content: space-between; border-bottom: 2px solid #0f172a; padding-bottom: 12px; margin-bottom: 15px;">
+                <div>
+                    <h2 style="margin: 0; font-size: 20px;">CIVICFIX - NIPANE GRAMPANCHAYAT</h2>
+                    <p style="margin: 3px 0 0 0; font-size: 12px; color: #475569;">Official Civic Task Slip & Field Work Order</p>
+                </div>
+                <div style="text-align: right;">
+                    <strong id="printReportId" style="font-size: 18px; font-family: monospace;"></strong><br>
+                    <small id="printDate" style="color: #64748b;"></small>
+                </div>
+            </div>
+
+            <table style="width: 100%; border-collapse: collapse; margin-bottom: 15px; font-size: 14px;">
+                <tr>
+                    <td style="padding: 6px; font-weight: bold; width: 30%;">Category:</td>
+                    <td style="padding: 6px;" id="printCategory"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px; font-weight: bold;">AI Priority Rating:</td>
+                    <td style="padding: 6px;" id="printPriority"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px; font-weight: bold;">Citizen Info:</td>
+                    <td style="padding: 6px;" id="printCitizen"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px; font-weight: bold;">Problem Description:</td>
+                    <td style="padding: 6px;" id="printDesc"></td>
+                </tr>
+                <tr>
+                    <td style="padding: 6px; font-weight: bold;">GPS Live Location:</td>
+                    <td style="padding: 6px;" id="printLocation"></td>
+                </tr>
+            </table>
+
+            <div style="margin-top: 15px; display: flex; gap: 20px;">
+                <div style="width: 45%;">
+                    <strong>Field Photo:</strong><br>
+                    <img id="printPhoto" src="" style="width: 100%; max-height: 180px; object-fit: cover; border: 1px solid #cbd5e1; border-radius: 6px; margin-top: 6px;" alt="Work Photo">
+                </div>
+                <div style="width: 50%; display: flex; flex-direction: column; justify-content: space-between;">
+                    <div style="border: 1px dashed #64748b; padding: 12px; border-radius: 6px; height: 90px;">
+                        <small style="color: #64748b;">Field Worker Completion Signature & Remarks:</small>
+                    </div>
+                    <div style="display: flex; justify-content: space-between; font-size: 12px; padding-top: 15px;">
+                        <span>System Lead: <strong>Pranav Sagar Patil</strong></span>
+                        <span>Gramsevak / Sarpanch Seal: ________</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
