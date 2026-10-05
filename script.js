@@ -728,3 +728,666 @@ function compressPhoto(file) {
                 const ctx = canvas.getContext('2d');
                 ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
                 resolve(canvas.toDataURL('image/jpeg', 0.65));
+            };
+        };
+    });
+}
+
+// Feature 5: Offline LocalStorage Fallback
+function saveReportOffline(reportPayload) {
+    let offlineList = JSON.parse(localStorage.getItem('civicSenseOfflineReports') || '[]');
+    offlineList.push(reportPayload);
+    localStorage.setItem('civicSenseOfflineReports', JSON.stringify(offlineList));
+}
+
+function syncOfflineReports() {
+    let offlineList = JSON.parse(localStorage.getItem('civicSenseOfflineReports') || '[]');
+    if (offlineList.length > 0 && navigator.onLine) {
+        offlineList.forEach((item, index) => {
+            item.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+            db.collection("reports").add(item).then(() => {
+                offlineList.splice(index, 1);
+                localStorage.setItem('civicSenseOfflineReports', JSON.stringify(offlineList));
+            });
+        });
+    }
+}
+window.addEventListener('online', syncOfflineReports);
+
+// 6. Submit Handler
+const civicForm = document.getElementById('civicForm');
+if (civicForm) {
+    civicForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!selectedPhotoFile) {
+            alert(currentLang === 'mr' ? "कृपया समस्येचा फोटो घ्या किंवा निवडा." : (currentLang === 'hi' ? "कृपया समस्या का फोटो लें या चुनें।" : "Please take or choose a photo of the issue."));
+            return;
+        }
+
+        if (!userLocation.latitude) {
+            alert(currentLang === 'mr' ? "कृपया नकाशावर समस्येचे ठिकाण निवडा." : (currentLang === 'hi' ? "कृपया मानचित्र पर समस्या का स्थान चुनें।" : "Please pin issue location on the map."));
+            return;
+        }
+
+        const submitBtn = document.getElementById('submitBtn');
+        submitBtn.innerText = "Analyzing & Syncing...";
+        submitBtn.disabled = true;
+
+        try {
+            const cat = document.getElementById('category').value;
+            const desc = document.getElementById('description').value;
+            const reporterName = document.getElementById('reporterName').value.trim() || "";
+            const reporterPhone = document.getElementById('reporterPhone').value.trim() || "";
+            
+            const compressedBase64 = await compressPhoto(selectedPhotoFile);
+            const aiResult = calculatePriorityScore(cat, desc, true);
+            const customReportId = generateReportId();
+
+            let clusterCount = 1;
+            globalReports.forEach(r => {
+                if (r.category === cat && r.status !== 'Resolved') {
+                    const d = getDistanceMeters(userLocation.latitude, userLocation.longitude, r.latitude, r.longitude);
+                    if (d <= 100) clusterCount++;
+                }
+            });
+
+            if (clusterCount > 1) {
+                aiResult.score = Math.min(aiResult.score + 25, 100);
+                if (aiResult.score >= 60) aiResult.level = "HIGH";
+            }
+
+            const reportPayload = {
+                reportId: customReportId,
+                category: cat,
+                description: desc,
+                photo: compressedBase64,
+                latitude: userLocation.latitude,
+                longitude: userLocation.longitude,
+                priorityScore: aiResult.score,
+                priorityLevel: aiResult.level,
+                clusterCount: clusterCount,
+                reporterName: reporterName,
+                reporterPhone: reporterPhone,
+                reportLang: currentLang,
+                status: "Pending",
+                afterPhoto: null
+            };
+
+            if (navigator.onLine) {
+                reportPayload.timestamp = firebase.firestore.FieldValue.serverTimestamp();
+                await db.collection("reports").add(reportPayload);
+            } else {
+                saveReportOffline(reportPayload);
+                alert("Saved locally in Offline Mode! Will auto-sync when network connects.");
+            }
+
+            const successMsg = currentLang === 'mr' 
+                ? `तक्रार यशस्वीरित्या नोंदवली गेली!\n\nतुमचा रिपोर्ट आयडी: ${customReportId}\n(तक्रारीची स्थिती तपासण्यासाठी हा आयडी जपून ठेवा)\nएआय प्राधान्य: ${aiResult.level}`
+                : (currentLang === 'hi' 
+                    ? `शिकायत सफलतापूर्वक दर्ज की गई!\n\nआपकी रिपोर्ट आईडी: ${customReportId}\n(स्थिति जांचने के लिए इस आईडी को सुरक्षित रखें)\nएआई प्राथमिकता: ${aiResult.level}`
+                    : `Complaint lodged successfully!\n\nYour Report ID: ${customReportId}\n(Save this ID to track your grievance status)\nAI Assigned Urgency: ${aiResult.level}`);
+            
+            alert(successMsg);
+            civicForm.reset();
+            selectedPhotoFile = null;
+            const pfb = document.getElementById('photoFeedbackBox');
+            if (pfb) pfb.style.display = 'none';
+            userLocation = { latitude: null, longitude: null };
+            if (reportMarker && reportMap) reportMap.removeLayer(reportMarker);
+            switchTab('home');
+        } catch (err) {
+            alert("Submission failed: " + err.message);
+        } finally {
+            submitBtn.innerText = TRANSLATIONS[currentLang].submitBtn;
+            submitBtn.disabled = false;
+        }
+    });
+}
+
+// 7. Public Grievance Status Tracker (Shows Before vs After Proof)
+function trackCitizenReport() {
+    const input = document.getElementById("searchReportIdInput").value.trim().toUpperCase();
+    const resultCard = document.getElementById("statusResultCard");
+    if (!input) {
+        alert("Please enter a valid Report ID.");
+        return;
+    }
+
+    const matched = globalReports.find(r => (r.reportId || '').toUpperCase() === input);
+
+    if (matched) {
+        resultCard.style.display = "block";
+        document.getElementById("resReportId").innerText = matched.reportId;
+        
+        const badge = document.getElementById("resStatusBadge");
+        badge.innerText = matched.status;
+        if (matched.status === 'Resolved') {
+            badge.className = "p-badge p-low";
+        } else if (matched.status === 'In Progress') {
+            badge.className = "p-badge p-med";
+        } else {
+            badge.className = "p-badge p-high";
+        }
+
+        document.getElementById("resCategory").innerText = matched.category;
+        
+        let dateStr = "Recent";
+        if (matched.timestamp && matched.timestamp.toDate) {
+            const d = matched.timestamp.toDate();
+            dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
+        }
+        document.getElementById("resDate").innerText = dateStr;
+        document.getElementById("resPriority").innerText = `${matched.priorityLevel} (${matched.priorityScore || 20})`;
+        document.getElementById("resDesc").innerText = matched.description || "No description.";
+
+        // Before Photo
+        document.getElementById("resPhotoBefore").src = matched.photo;
+
+        // After Photo (Resolution Proof)
+        const afterImg = document.getElementById("resPhotoAfter");
+        const noAfterText = document.getElementById("resNoAfterText");
+        if (matched.afterPhoto) {
+            afterImg.src = matched.afterPhoto;
+            afterImg.style.display = "block";
+            noAfterText.style.display = "none";
+        } else {
+            afterImg.style.display = "none";
+            noAfterText.style.display = "block";
+        }
+    } else {
+        resultCard.style.display = "none";
+        alert("No grievance report found matching this ID. Please check and try again.");
+    }
+}
+
+// 8. Robust Real-Time Sync & Analytics
+db.collection("reports").onSnapshot(snapshot => {
+    globalReports = [];
+    let total = 0, resolved = 0, critical = 0, medium = 0, low = 0;
+    const catMap = {};
+
+    snapshot.forEach(doc => {
+        const data = doc.data();
+        data.id = doc.id;
+
+        // Strictly enforce 3 letters + 4 pure digits (NIP-XXXX)
+        if (!data.reportId || !/^NIP-\d{4}$/.test(data.reportId)) {
+            let hash = 0;
+            for (let i = 0; i < data.id.length; i++) {
+                hash = (hash * 31 + data.id.charCodeAt(i)) % 9000;
+            }
+            data.reportId = `NIP-${1000 + Math.abs(hash)}`;
+        }
+
+        globalReports.push(data);
+
+        total++;
+        if (data.status === "Resolved") resolved++;
+        if (data.priorityLevel === "HIGH" || data.priorityLevel === "CRITICAL") critical++;
+        else if (data.priorityLevel === "MEDIUM") medium++;
+        else low++;
+
+        if (data.category) {
+            catMap[data.category] = (catMap[data.category] || 0) + 1;
+        }
+    });
+
+    // Dynamic Calculation of Cluster Lists and Same Problem Lists
+    globalReports.forEach((r, idx) => {
+        let nearbyList = [];
+        let sameList = [];
+
+        globalReports.forEach((other, oIdx) => {
+            if (idx !== oIdx) {
+                if (r.latitude && r.longitude && other.latitude && other.longitude) {
+                    const dist = getDistanceMeters(r.latitude, r.longitude, other.latitude, other.longitude);
+                    if (dist <= 100) {
+                        nearbyList.push(other);
+                    }
+                }
+
+                if (r.category === other.category) {
+                    const sim = calculateSimilarity(r.description, other.description);
+                    if (sim >= 0.35 || (r.description && other.description && r.description.trim().toLowerCase() === other.description.trim().toLowerCase())) {
+                        sameList.push(other);
+                    }
+                }
+            }
+        });
+
+        r.nearbyReports = nearbyList;
+        r.sameReports = sameList;
+        r.liveNearbyCount = nearbyList.length + 1;
+        r.liveSameCount = sameList.length + 1;
+    });
+
+    const statTotal = document.getElementById('stat-total');
+    const statResolved = document.getElementById('stat-resolved');
+    const statCritical = document.getElementById('stat-critical');
+    if (statTotal) statTotal.innerText = total;
+    if (statResolved) statResolved.innerText = resolved;
+    if (statCritical) statCritical.innerText = critical;
+
+    const bUrgent = document.getElementById('badgeUrgent');
+    const bMedium = document.getElementById('badgeMedium');
+    const bLow = document.getElementById('badgeLow');
+    if (bUrgent) bUrgent.innerText = `🔴 High: ${critical}`;
+    if (bMedium) bMedium.innerText = `🟡 Medium: ${medium}`;
+    if (bLow) bLow.innerText = `🟢 Low: ${low}`;
+
+    // Feature 4: Render Visual Analytics Bar
+    const resPercent = total > 0 ? Math.round((resolved / total) * 100) : 0;
+    const statResPercent = document.getElementById('statResolutionPercent');
+    const resProgressBar = document.getElementById('resolutionProgressBar');
+    const statResSubtitle = document.getElementById('statResolutionSubtitle');
+    if (statResPercent) statResPercent.innerText = `${resPercent}%`;
+    if (resProgressBar) resProgressBar.style.width = `${resPercent}%`;
+    if (statResSubtitle) statResSubtitle.innerText = `${resolved} Resolved out of ${total} Grievances`;
+
+    const statCatContainer = document.getElementById('statTopCategories');
+    if (statCatContainer) {
+        statCatContainer.innerHTML = Object.entries(catMap)
+            .sort((a,b) => b[1] - a[1])
+            .slice(0, 3)
+            .map(([cat, count]) => `<span style="background:#e0f2fe; color:#0369a1; padding:3px 8px; border-radius:6px; font-weight:bold;">${cat}: ${count}</span>`)
+            .join(' ');
+    }
+
+    applySortingAndFiltering();
+
+    if (trackerMap) {
+        renderTrackerMarkers();
+    }
+}, error => {
+    console.error("Firestore sync error:", error);
+});
+
+function applySortingAndFiltering() {
+    if (!document.getElementById('adminTableBody')) return;
+
+    const groupBy = document.getElementById('groupBySelect') ? document.getElementById('groupBySelect').value : 'none';
+    const sortType = document.getElementById('sortBySelect') ? document.getElementById('sortBySelect').value : 'newest';
+    const filter = document.getElementById('priorityFilter') ? document.getElementById('priorityFilter').value : 'All';
+    const searchKeyword = document.getElementById('adminSearchInput') ? document.getElementById('adminSearchInput').value.trim().toLowerCase() : '';
+
+    let filtered = [...globalReports];
+
+    if (searchKeyword) {
+        filtered = filtered.filter(r => 
+            (r.reportId && r.reportId.toLowerCase().includes(searchKeyword)) ||
+            (r.category && r.category.toLowerCase().includes(searchKeyword)) ||
+            (r.description && r.description.toLowerCase().includes(searchKeyword)) ||
+            (r.reporterName && r.reporterName.toLowerCase().includes(searchKeyword))
+        );
+    }
+
+    if (filter !== "All") {
+        filtered = filtered.filter(r => r.priorityLevel === filter);
+    }
+
+    filtered.sort((a, b) => {
+        const timeA = (a.timestamp && a.timestamp.toMillis) ? a.timestamp.toMillis() : 0;
+        const timeB = (b.timestamp && b.timestamp.toMillis) ? b.timestamp.toMillis() : 0;
+        const scoreA = a.priorityScore || 20;
+        const scoreB = b.priorityScore || 20;
+
+        if (sortType === 'newest') return timeB - timeA;
+        if (sortType === 'oldest') return timeA - timeB;
+        if (sortType === 'highPriority') return scoreB - scoreA;
+        if (sortType === 'lowPriority') return scoreA - scoreB;
+        return 0;
+    });
+
+    renderAdminTable(filtered, groupBy);
+}
+
+function renderAdminTable(reports, groupBy = 'none') {
+    const tbody = document.getElementById('adminTableBody');
+    if (!tbody) return;
+    tbody.innerHTML = "";
+
+    const t = TRANSLATIONS[currentLang] || TRANSLATIONS['en'];
+
+    if (reports.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="10" style="text-align: center; padding: 20px; color: #64748b;">No matching issues found.</td></tr>`;
+        return;
+    }
+
+    function buildRowHtml(r) {
+        const badgeColor = (r.priorityLevel === 'HIGH' || r.priorityLevel === 'CRITICAL') ? 'p-high' : (r.priorityLevel === 'MEDIUM' ? 'p-med' : 'p-low');
+        
+        const countGeo = r.liveNearbyCount || 1;
+        const clusterHtml = countGeo > 1 
+            ? `<span class="cluster-tag clickable-badge" title="Click to view related reports" onclick="event.stopPropagation(); openClusterListModal('${r.id}', 'geo')">⚠️ ${countGeo} ${t.clusterTag}</span>` 
+            : `<span style="color:#94a3b8; font-size:11px;">${t.singleReport}</span>`;
+
+        const countSame = r.liveSameCount || 1;
+        const sameHtml = countSame > 1 
+            ? `<span class="ai-same-tag clickable-badge" title="Click to view identical reports" onclick="event.stopPropagation(); openClusterListModal('${r.id}', 'same')">🔁 ${countSame} Same</span>` 
+            : `<span style="color:#94a3b8; font-size:11px;">${t.uniqueIssue}</span>`;
+        
+        let dateStr = "Recent";
+        if (r.timestamp && r.timestamp.toDate) {
+            const d = r.timestamp.toDate();
+            dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        const citizenName = r.reporterName ? r.reporterName : t.anonymous;
+        const citizenPhone = r.reporterPhone ? r.reporterPhone : t.noPhone;
+        const citizenInfo = `<strong>${citizenName}</strong><br><small style="color:#64748b;">${citizenPhone}</small>`;
+
+        return `
+            <tr class="table-row-hover" style="border-bottom: 1px solid #f1f5f9;">
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><span class="id-badge">${r.reportId}</span></td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><img src="${r.photo}" style="width: 48px; height: 48px; border-radius: 8px; object-fit: cover;" alt="Issue"/></td>
+                <td style="padding: 10px; font-size: 12px; color: #475569;" onclick="openModal('${r.id}')">${dateStr}</td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><strong>${r.category}</strong><br><small style="color:#64748b;">${(r.description || '').substring(0, 35)}...</small></td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')">${citizenInfo}</td>
+                <td style="padding: 10px;" onclick="openModal('${r.id}')"><span class="p-badge ${badgeColor}">${r.priorityLevel} (${r.priorityScore || 20})</span></td>
+                <td style="padding: 10px;">${clusterHtml}</td>
+                <td style="padding: 10px;">${sameHtml}</td>
+                <td style="padding: 10px;"><strong>${r.status}</strong></td>
+                <td style="padding: 10px; white-space: nowrap;">
+                    <button style="background:#0284c7; color:#fff; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="updateDocStatus('${r.id}', 'In Progress')">${t.btnProg}</button>
+                    <button style="background:#16a34a; color:#fff; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="openResolveModal('${r.id}')">${t.btnRes}</button>
+                    <button style="background:#ef4444; color:#fff; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:11px; margin-bottom: 2px;" onclick="deleteDocReport('${r.id}')">${t.btnDel}</button>
+                    <button style="background:#475569; color:#fff; border:none; padding:4px 7px; border-radius:4px; cursor:pointer; font-size:11px;" onclick="printTaskSlip('${r.id}')">🖨️ ${t.btnPrint}</button>
+                </td>
+            </tr>
+        `;
+    }
+
+    if (groupBy === 'none') {
+        tbody.innerHTML = reports.map(buildRowHtml).join('');
+    } else if (groupBy === 'geo') {
+        const groups = {};
+        reports.forEach(r => {
+            const key = (r.liveNearbyCount > 1) ? `📍 100m Cluster Zone (${r.liveNearbyCount} Reports Linked)` : `📍 Isolated / Single Reports`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(r);
+        });
+
+        let fullHtml = "";
+        for (const [groupName, items] of Object.entries(groups)) {
+            fullHtml += `<tr><td colspan="10" class="group-header-row">${groupName}</td></tr>`;
+            fullHtml += items.map(buildRowHtml).join('');
+        }
+        tbody.innerHTML = fullHtml;
+    } else if (groupBy === 'aiSame') {
+        const groups = {};
+        reports.forEach(r => {
+            const key = (r.liveSameCount > 1) ? `🤖 AI Matched Group: "${r.category}" (${r.liveSameCount} Identical Reports)` : `🤖 Unique Individual Reports`;
+            if (!groups[key]) groups[key] = [];
+            groups[key].push(r);
+        });
+
+        let fullHtml = "";
+        for (const [groupName, items] of Object.entries(groups)) {
+            fullHtml += `<tr><td colspan="10" class="group-header-row" style="background:#f3e8ff; color:#581c87;">${groupName}</td></tr>`;
+            fullHtml += items.map(buildRowHtml).join('');
+        }
+        tbody.innerHTML = fullHtml;
+    }
+}
+
+// Feature 2: Resolve Modal & After Photo Handlers
+function openResolveModal(id) {
+    activeResolveReportId = id;
+    document.getElementById('resolvePhotoInput').value = '';
+    document.getElementById('resolveModal').style.display = 'block';
+}
+
+function closeResolveModal() {
+    activeResolveReportId = null;
+    document.getElementById('resolveModal').style.display = 'none';
+}
+
+async function confirmResolveSubmission(includePhoto) {
+    if (!activeResolveReportId) return;
+
+    let afterBase64 = null;
+    const fileInput = document.getElementById('resolvePhotoInput');
+
+    if (includePhoto && fileInput.files && fileInput.files[0]) {
+        afterBase64 = await compressPhoto(fileInput.files[0]);
+    }
+
+    const reportId = activeResolveReportId;
+    closeResolveModal();
+
+    db.collection("reports").doc(reportId).update({
+        status: "Resolved",
+        afterPhoto: afterBase64
+    }).then(() => {
+        triggerWhatsAppUpdate(reportId, "Resolved");
+    });
+}
+
+// Feature 3: Printable Task Slip Generator
+function printTaskSlip(id) {
+    const r = globalReports.find(item => item.id === id);
+    if (!r) return;
+
+    let dateStr = "Recent";
+    if (r.timestamp && r.timestamp.toDate) {
+        const d = r.timestamp.toDate();
+        dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
+    }
+
+    document.getElementById('printReportId').innerText = `#${r.reportId}`;
+    document.getElementById('printDate').innerText = `Date: ${dateStr}`;
+    document.getElementById('printCategory').innerText = r.category;
+    document.getElementById('printPriority').innerText = `${r.priorityLevel} (AI Score: ${r.priorityScore || 20})`;
+    document.getElementById('printCitizen').innerText = `${r.reporterName || 'Anonymous'} | Phone: ${r.reporterPhone || 'Not Provided'}`;
+    document.getElementById('printDesc').innerText = r.description || "N/A";
+    document.getElementById('printLocation').innerHTML = `<a href="https://www.google.com/maps?q=${r.latitude},${r.longitude}">Maps Live Pin (${r.latitude ? r.latitude.toFixed(4) : ''}, ${r.longitude ? r.longitude.toFixed(4) : ''})</a>`;
+    document.getElementById('printPhoto').src = r.photo;
+
+    window.print();
+}
+
+// Status Updates & WhatsApp Integration
+function updateDocStatus(id, newStatus) {
+    db.collection("reports").doc(id).update({ status: newStatus }).then(() => {
+        triggerWhatsAppUpdate(id, newStatus);
+    });
+}
+
+function triggerWhatsAppUpdate(id, newStatus) {
+    const report = globalReports.find(r => r.id === id);
+    if (report && report.reporterPhone && report.reporterPhone.trim() !== "") {
+        const lang = report.reportLang || currentLang || 'en';
+        
+        const promptMsg = lang === 'mr' 
+            ? `स्थिती "${newStatus}" अशी बदलली आहे. ${report.reporterName || 'नागरिकाला'} व्हॉट्सॲपवर संदेश पाठवायचा आहे का?`
+            : (lang === 'hi' 
+                ? `स्थिति "${newStatus}" कर दी गई है। क्या आप ${report.reporterName || 'नागरिक'} को व्हाट्सएप पर संदेश भेजना चाहते हैं?`
+                : `Status updated to "${newStatus}". Send WhatsApp update to ${report.reporterName || 'citizen'}?`);
+
+        const sendMsg = confirm(promptMsg);
+        if (sendMsg) {
+            let cleanPhone = report.reporterPhone.replace(/\D/g, '');
+            if (cleanPhone.length === 10) cleanPhone = '91' + cleanPhone;
+            
+            let messageBody = "";
+            const citizenName = report.reporterName || (lang === 'mr' ? 'नागरिक' : (lang === 'hi' ? 'नागरिक' : 'Citizen'));
+            
+            if (lang === 'mr') {
+                const st = newStatus === 'Resolved' ? 'निवारण झाले (Resolved)' : 'प्रगतीपथावर (In Progress)';
+                messageBody = `नमस्कार ${citizenName}, आपण नोंदवलेली तक्रार [ID: ${report.reportId}] "${report.category}" आता: ${st} झाली आहे. परिसराच्या स्वच्छतेसाठी व सुरक्षेसाठी सहकार्य केल्याबद्दल धन्यवाद! - ग्रामपंचायत निपाणे.`;
+            } else if (lang === 'hi') {
+                const st = newStatus === 'Resolved' ? 'हल कर दी गई (Resolved)' : 'प्रगति पर है (In Progress)';
+                messageBody = `नमस्ते ${citizenName}, आपकी शिकायत [ID: ${report.reportId}] "${report.category}" अब: ${st} हो चुकी है। ग्राम स्वच्छता और सुरक्षा में सहयोग के लिए धन्यवाद! - ग्रामपंचायत निपाणे।`;
+            } else {
+                messageBody = `Hello ${citizenName}, your grievance [ID: ${report.reportId}] regarding "${report.category}" has been marked as: ${newStatus.toUpperCase()}. Thank you for helping keep our locality clean and safe! - Grampanchayat Nipane.`;
+            }
+
+            window.open(`https://wa.me/${cleanPhone}?text=${encodeURIComponent(messageBody)}`, '_blank');
+        }
+    }
+}
+
+function deleteDocReport(id) {
+    if (confirm("Are you sure you want to delete this grievance record?")) {
+        db.collection("reports").doc(id).delete();
+    }
+}
+
+// Cluster Inspector Modal
+function openClusterListModal(reportDocId, mode) {
+    const parentReport = globalReports.find(r => r.id === reportDocId);
+    if (!parentReport) return;
+
+    const listContainer = document.getElementById('clusterModalList');
+    const title = document.getElementById('clusterModalTitle');
+    const subtitle = document.getElementById('clusterModalSubtitle');
+    listContainer.innerHTML = "";
+
+    const related = mode === 'geo' ? parentReport.nearbyReports : parentReport.sameReports;
+
+    if (mode === 'geo') {
+        title.innerText = `📍 Nearby 100m Cluster (${related.length + 1} Reports)`;
+        subtitle.innerText = `Reports filed within 100m of issue #${parentReport.reportId}:`;
+    } else {
+        title.innerText = `🤖 AI Similar Problems (${related.length + 1} Reports)`;
+        subtitle.innerText = `Issues matching descriptions with issue #${parentReport.reportId}:`;
+    }
+
+    const allLinked = [parentReport, ...related];
+
+    allLinked.forEach((item) => {
+        let dateStr = "Recent";
+        if (item.timestamp && item.timestamp.toDate) {
+            const d = item.timestamp.toDate();
+            dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
+        }
+
+        const isRoot = item.id === parentReport.id;
+        const card = document.createElement('div');
+        card.style.cssText = `display: flex; gap: 12px; align-items: center; background: ${isRoot ? '#eff6ff' : '#f8fafc'}; border: 1px solid ${isRoot ? '#93c5fd' : '#e2e8f0'}; padding: 10px; border-radius: 8px; cursor: pointer;`;
+        card.onclick = () => {
+            closeClusterModal();
+            openModal(item.id);
+        };
+
+        card.innerHTML = `
+            <img src="${item.photo}" style="width: 45px; height: 45px; border-radius: 6px; object-fit: cover;" alt="issue">
+            <div style="flex: 1;">
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <span class="id-badge">${item.reportId}</span>
+                    <span style="font-size: 11px; font-weight: bold; color: ${item.status === 'Resolved' ? '#16a34a' : '#2563eb'};">${item.status}</span>
+                </div>
+                <div style="font-size: 13px; font-weight: bold; margin-top: 2px;">${item.category} ${isRoot ? '<small style="color:#2563eb;">(Current)</small>' : ''}</div>
+                <div style="font-size: 11px; color: #64748b;">${(item.description || '').substring(0, 45)}... • ${dateStr}</div>
+            </div>
+        `;
+        listContainer.appendChild(card);
+    });
+
+    document.getElementById('clusterModal').style.display = "block";
+}
+
+function closeClusterModal() {
+    document.getElementById('clusterModal').style.display = "none";
+}
+
+// Modal & Lightbox
+let currentZoom = 1;
+
+function openModal(id) {
+    const r = globalReports.find(item => item.id === id);
+    if (!r) return;
+
+    let dateStr = "N/A";
+    if (r.timestamp && r.timestamp.toDate) {
+        const d = r.timestamp.toDate();
+        dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
+    }
+
+    const modalIdBadge = document.getElementById('modalReportIdBadge');
+    if (modalIdBadge) modalIdBadge.innerText = r.reportId || 'NIP-0000';
+
+    document.getElementById('modalCategory').innerText = `${r.category} (${r.status})`;
+    document.getElementById('modalImg').src = r.photo;
+    document.getElementById('modalDateTime').innerText = dateStr;
+    document.getElementById('modalPriority').innerText = `${r.priorityLevel} (Score: ${r.priorityScore || 20})`;
+    document.getElementById('modalReporter').innerText = `${r.reporterName || 'Anonymous'} (Phone: ${r.reporterPhone || 'Not Provided'})`;
+    document.getElementById('modalDesc').innerText = r.description || "No description provided.";
+    document.getElementById('modalMapLink').href = `https://www.google.com/maps?q=${r.latitude},${r.longitude}`;
+
+    document.getElementById('detailModal').style.display = "block";
+}
+
+function closeModal() {
+    document.getElementById('detailModal').style.display = "none";
+}
+
+function openLightbox() {
+    const mainImg = document.getElementById('modalImg');
+    const lbImg = document.getElementById('lightboxImage');
+    if (!mainImg || !lbImg) return;
+
+    lbImg.src = mainImg.src;
+    currentZoom = 1;
+    lbImg.style.transform = `scale(1)`;
+    document.getElementById('lightboxOverlay').style.display = 'flex';
+}
+
+function closeLightbox() {
+    document.getElementById('lightboxOverlay').style.display = 'none';
+}
+
+function closeLightboxOnBackdrop(e) {
+    if (e.target.id === 'lightboxOverlay') {
+        closeLightbox();
+    }
+}
+
+function adjustZoom(delta) {
+    const lbImg = document.getElementById('lightboxImage');
+    currentZoom = Math.min(Math.max(0.5, currentZoom + delta), 4.0);
+    lbImg.style.transform = `scale(${currentZoom})`;
+}
+
+function resetZoom() {
+    currentZoom = 1;
+    const lbImg = document.getElementById('lightboxImage');
+    if (lbImg) lbImg.style.transform = `scale(1)`;
+}
+
+window.addEventListener('wheel', function(e) {
+    const lb = document.getElementById('lightboxOverlay');
+    if (lb && lb.style.display === 'flex') {
+        e.preventDefault();
+        if (e.deltaY < 0) adjustZoom(0.15);
+        else adjustZoom(-0.15);
+    }
+}, { passive: false });
+
+window.onclick = function(event) {
+    const modal = document.getElementById('detailModal');
+    const clusterModal = document.getElementById('clusterModal');
+    const resModal = document.getElementById('resolveModal');
+    if (event.target === modal) closeModal();
+    if (event.target === clusterModal) closeClusterModal();
+    if (event.target === resModal) closeResolveModal();
+};
+
+function renderTrackerMarkers() {
+    if (!trackerMap) return;
+    globalReports.forEach(r => {
+        if (r.latitude && r.longitude) {
+            L.marker([r.latitude, r.longitude])
+             .addTo(trackerMap)
+             .bindPopup(`<b>#${r.reportId} - ${r.category}</b><br>Priority: ${r.priorityLevel}<br>Status: ${r.status}`);
+        }
+    });
+}
+
+window.onload = function() {
+    checkAdminAuth();
+    initMaps();
+    changeLanguage(currentLang);
+    syncOfflineReports();
+};
