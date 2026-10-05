@@ -15,7 +15,7 @@
         .creator-badge {
             background: #f8fafc;
             border: 1px solid #cbd5e1;
-            padding: 6px 12px;
+            padding: 8px 14px;
             border-radius: 8px;
             text-align: right;
             font-size: 12px;
@@ -32,12 +32,18 @@
             color: #0f172a;
         }
         .creator-badge a {
-            color: #e1306c;
             text-decoration: none;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+        }
+        .creator-badge a.insta {
+            color: #e1306c;
+            margin-right: 6px;
+        }
+        .creator-badge a.email {
+            color: #2563eb;
         }
         .optional-box {
             background: #f8fafc;
@@ -79,6 +85,50 @@
         .photo-action-btn:hover {
             opacity: 0.9;
         }
+        .mic-btn {
+            background: #f1f5f9;
+            border: 1px solid #cbd5e1;
+            color: #0f172a;
+            padding: 4px 10px;
+            border-radius: 20px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 600;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: all 0.2s;
+        }
+        .mic-btn.recording {
+            background: #fee2e2;
+            border-color: #ef4444;
+            color: #dc2626;
+            animation: pulse-mic 1s infinite alternate;
+        }
+        @keyframes pulse-mic {
+            from { transform: scale(1); }
+            to { transform: scale(1.05); }
+        }
+        .proof-photos-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-top: 12px;
+        }
+        .proof-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 8px;
+            text-align: center;
+        }
+        .proof-box img {
+            width: 100%;
+            height: 140px;
+            object-fit: cover;
+            border-radius: 6px;
+            border: 1px solid #cbd5e1;
+        }
     </style>
 </head>
 <body>
@@ -97,7 +147,10 @@
         <div class="creator-badge">
             <div class="creator-title">SYSTEM ARCHITECT & LEAD</div>
             <div class="creator-name">Pranav Sagar Patil</div>
-            <a href="https://instagram.com/pranav__jagtap.0001" target="_blank">📸 @pranav__jagtap.0001</a>
+            <div>
+                <a href="https://instagram.com/pranav__jagtap.0001" target="_blank" class="insta">📸 @pranav__jagtap.0001</a>
+                <a href="mailto:patil4only@gmail.com" class="email">✉️ patil4only@gmail.com</a>
+            </div>
         </div>
 
         <div class="nav-links">
@@ -160,8 +213,13 @@
                         <option value="Other">Other Problem</option>
                     </select>
 
-                    <label id="lbl-desc" for="description">Problem Description</label>
-                    <textarea id="description" rows="3" placeholder="Describe issue (e.g. broken wire sparking, accident hazard)..." required oninput="triggerAiAnalysis()"></textarea>
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 15px;">
+                        <label id="lbl-desc" for="description" style="margin: 0; font-weight: 600;">Problem Description</label>
+                        <button type="button" id="voiceBtn" class="mic-btn" onclick="toggleVoiceInput()">
+                            🎙️ <span id="voiceBtnText">Speak (Voice-to-Text)</span>
+                        </button>
+                    </div>
+                    <textarea id="description" rows="3" placeholder="Describe issue or click mic to speak..." required oninput="triggerAiAnalysis()" style="margin-top: 6px;"></textarea>
 
                     <div class="ai-preview-box">
                         <div class="ai-meter-header">
@@ -171,7 +229,7 @@
                         <p id="aiExplanation" class="ai-hint">AI scans description to dynamically calculate urgency score.</p>
                     </div>
 
-                    <!-- Dual Photo Input: Camera vs Gallery -->
+                    <!-- Dual Photo Input -->
                     <label id="lbl-photo" style="display:block; margin-top: 15px; font-weight: 600;">Issue Photo (Camera or Gallery)</label>
                     
                     <input type="file" id="cameraInput" accept="image/*" capture="environment" style="display:none;" onchange="handlePhotoSelection(this)">
@@ -186,72 +244,5 @@
                         </button>
                     </div>
 
-                    <!-- Photo Selection Preview Box -->
                     <div id="photoFeedbackBox" style="display: none; align-items: center; gap: 12px; margin-top: 12px; background: #f8fafc; padding: 10px; border-radius: 8px; border: 1px solid #cbd5e1;">
-                        <img id="photoPreviewThumb" src="" style="width: 50px; height: 50px; border-radius: 6px; object-fit: cover; border: 1px solid #cbd5e1;" alt="Preview">
-                        <div>
-                            <span id="photoStatusText" style="font-size: 13px; color: #16a34a; font-weight: 700; display: block;">Photo Selected Successfully</span>
-                            <small id="photoFileName" style="color: #64748b; font-size: 11px;"></small>
-                        </div>
-                    </div>
-
-                    <label id="lbl-loc" style="margin-top: 15px; display: block;">Location Tagging</label>
-                    <button type="button" class="loc-btn" id="btn-detect-loc" onclick="fetchLiveLocation()">📍 Detect Live GPS Location</button>
-                    <div id="reportMap" class="map-box"></div>
-                    <p id="locationFeedback" class="status-msg">Location pending.</p>
-
-                    <div class="optional-box">
-                        <label id="lbl-optional-title" style="font-weight: bold; margin-bottom: 6px; display: block;">Citizen Details (Optional)</label>
-                        <input type="text" id="reporterName" placeholder="Your Name (Optional)" style="margin-bottom: 8px; width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                        <input type="tel" id="reporterPhone" placeholder="Mobile Number (Optional for WhatsApp updates)" style="width: 100%; padding: 8px; border-radius: 6px; border: 1px solid #cbd5e1;">
-                    </div>
-
-                    <button type="submit" id="submitBtn" class="submit-action-btn">Submit to CivicSense Engine</button>
-                </form>
-            </div>
-        </section>
-
-        <!-- 3. LIVE TRACKER -->
-        <section id="view-tracker" class="view-panel">
-            <div class="tracker-container">
-                <h2 id="tracker-title">Live Public Issue Tracker</h2>
-                <p id="tracker-subtitle" style="color: #64748b; font-size: 13px; margin-top: 4px;">Click on any marker to see status & AI priority.</p>
-                <div id="trackerMap" class="map-box-large"></div>
-            </div>
-        </section>
-
-        <!-- 4. TRACK STATUS BY 7-CHAR ID -->
-        <section id="view-status" class="view-panel">
-            <div class="form-container" style="max-width: 600px;">
-                <h2 id="track-status-title">Track Grievance Status</h2>
-                <p id="track-status-subtitle" style="color: #64748b; font-size: 13px; margin-bottom: 15px;">Enter your 7-character Report ID (e.g., NIP-5479) to check real-time progress.</p>
-                
-                <div style="display: flex; gap: 8px;">
-                    <input type="text" id="searchReportIdInput" placeholder="Enter Report ID (e.g. NIP-5479)" style="flex: 1; padding: 10px; border-radius: 6px; border: 1px solid #cbd5e1; font-weight: bold; text-transform: uppercase;">
-                    <button type="button" class="loc-btn" id="btn-search-status" style="width: auto; margin-top: 0; padding: 0 20px;" onclick="trackCitizenReport()">Search</button>
-                </div>
-
-                <div id="statusResultCard" class="status-card-box">
-                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <span id="resReportId" style="font-weight: 800; color: #2563eb; font-size: 16px;"></span>
-                        <span id="resStatusBadge" class="p-badge"></span>
-                    </div>
-                    <p><strong>Category:</strong> <span id="resCategory"></span></p>
-                    <p><strong>Logged On:</strong> <span id="resDate"></span></p>
-                    <p><strong>AI Priority:</strong> <span id="resPriority"></span></p>
-                    <p><strong>Description:</strong> <span id="resDesc" style="color: #475569;"></span></p>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <footer style="text-align: center; padding: 25px 0; color: #94a3b8; font-size: 12px;">
-        CivicSense-Nipane • Built by Pranav Sagar Patil • <a href="admin.html" style="color: #94a3b8; text-decoration: none;">Authorized Portal</a>
-    </footer>
-
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
+                        <img id="photoPreviewThumb"
