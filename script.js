@@ -307,6 +307,7 @@ function verifyAdminPin() {
         sessionStorage.setItem('civicSenseAdminAuth', 'true');
         if (lockScreen) lockScreen.style.display = 'none';
         if (errorMsg) errorMsg.style.display = 'none';
+        applySortingAndFiltering();
     } else {
         if (errorMsg) errorMsg.style.display = 'block';
         if (pinInput) {
@@ -733,7 +734,8 @@ if (civicForm) {
             alert(successMsg);
             civicForm.reset();
             selectedPhotoFile = null;
-            document.getElementById('photoFeedbackBox').style.display = 'none';
+            const pfb = document.getElementById('photoFeedbackBox');
+            if (pfb) pfb.style.display = 'none';
             userLocation = { latitude: null, longitude: null };
             if (reportMarker && reportMap) reportMap.removeLayer(reportMarker);
             switchTab('home');
@@ -774,7 +776,7 @@ function trackCitizenReport() {
         document.getElementById("resCategory").innerText = matched.category;
         
         let dateStr = "Recent";
-        if (matched.timestamp) {
+        if (matched.timestamp && matched.timestamp.toDate) {
             const d = matched.timestamp.toDate();
             dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
         }
@@ -787,8 +789,8 @@ function trackCitizenReport() {
     }
 }
 
-// 8. Real-Time Sync & Dynamic Linking
-db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
+// 8. Robust Real-Time Sync (Crash-Proof)
+db.collection("reports").onSnapshot(snapshot => {
     globalReports = [];
     let total = 0, resolved = 0, critical = 0, medium = 0, low = 0;
 
@@ -864,6 +866,8 @@ db.collection("reports").orderBy("timestamp", "desc").onSnapshot(snapshot => {
     if (trackerMap) {
         renderTrackerMarkers();
     }
+}, error => {
+    console.error("Firestore sync error:", error);
 });
 
 function applySortingAndFiltering() {
@@ -890,8 +894,8 @@ function applySortingAndFiltering() {
     }
 
     filtered.sort((a, b) => {
-        const timeA = a.timestamp ? a.timestamp.toMillis() : 0;
-        const timeB = b.timestamp ? b.timestamp.toMillis() : 0;
+        const timeA = (a.timestamp && a.timestamp.toMillis) ? a.timestamp.toMillis() : 0;
+        const timeB = (b.timestamp && b.timestamp.toMillis) ? b.timestamp.toMillis() : 0;
         const scoreA = a.priorityScore || 20;
         const scoreB = b.priorityScore || 20;
 
@@ -931,7 +935,7 @@ function renderAdminTable(reports, groupBy = 'none') {
             : `<span style="color:#94a3b8; font-size:11px;">${t.uniqueIssue}</span>`;
         
         let dateStr = "Recent";
-        if (r.timestamp) {
+        if (r.timestamp && r.timestamp.toDate) {
             const d = r.timestamp.toDate();
             dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
         }
@@ -1017,7 +1021,7 @@ function openClusterListModal(reportDocId, mode) {
 
     allLinked.forEach((item) => {
         let dateStr = "Recent";
-        if (item.timestamp) {
+        if (item.timestamp && item.timestamp.toDate) {
             const d = item.timestamp.toDate();
             dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' })}`;
         }
@@ -1102,7 +1106,7 @@ function openModal(id) {
     if (!r) return;
 
     let dateStr = "N/A";
-    if (r.timestamp) {
+    if (r.timestamp && r.timestamp.toDate) {
         const d = r.timestamp.toDate();
         dateStr = `${d.toLocaleDateString('en-IN')} ${d.toLocaleTimeString('en-IN')}`;
     }
