@@ -37,12 +37,18 @@
             color: #0f172a;
         }
         .creator-badge a {
-            color: #e1306c;
             text-decoration: none;
             font-weight: 600;
             display: inline-flex;
             align-items: center;
             gap: 4px;
+        }
+        .creator-badge a.insta {
+            color: #e1306c;
+            margin-right: 8px;
+        }
+        .creator-badge a.email {
+            color: #2563eb;
         }
         .table-row-hover:hover {
             background-color: #f8fafc;
@@ -82,6 +88,32 @@
             font-size: 11px;
             font-weight: bold;
             display: inline-block;
+        }
+        /* Analytics Cards */
+        .analytics-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .analytic-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 10px;
+            padding: 15px;
+        }
+        .progress-bar-bg {
+            background: #e2e8f0;
+            border-radius: 10px;
+            height: 10px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+        .progress-bar-fill {
+            background: #16a34a;
+            height: 100%;
+            width: 0%;
+            transition: width 0.4s ease;
         }
         /* Detail Modal */
         .modal {
@@ -123,7 +155,7 @@
         .zoomable-thumb:hover {
             transform: scale(1.01);
         }
-        /* Fullscreen Lightbox */
+        /* Lightbox */
         .lightbox-overlay {
             display: none;
             position: fixed;
@@ -175,6 +207,23 @@
             cursor: pointer;
             z-index: 10001;
         }
+
+        /* Printable Task Slip Styling */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #printSection, #printSection * {
+                visibility: visible;
+            }
+            #printSection {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                display: block !important;
+            }
+        }
     </style>
 </head>
 <body style="background: #f1f5f9; padding: 20px;">
@@ -198,7 +247,7 @@
         </div>
     </div>
 
-    <div style="max-width: 1350px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
+    <div style="max-width: 1380px; margin: 0 auto; background: #ffffff; padding: 25px; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1);">
         
         <div class="admin-header-flex">
             <div>
@@ -224,11 +273,33 @@
                 <div class="creator-badge">
                     <div class="creator-title">SYSTEM ARCHITECT & LEAD</div>
                     <div class="creator-name">Pranav Sagar Patil</div>
-                    <a href="https://instagram.com/pranav__jagtap.0001" target="_blank">📸 @pranav__jagtap.0001</a>
+                    <div>
+                        <a href="https://instagram.com/pranav__jagtap.0001" target="_blank" class="insta">📸 @pranav__jagtap.0001</a>
+                        <a href="mailto:patil4only@gmail.com" class="email">✉️ patil4only@gmail.com</a>
+                    </div>
                 </div>
 
                 <a href="index.html" id="link-public-app" style="font-size: 13px; color: #2563eb; text-decoration: none; font-weight: 600;">← Open Public App</a>
                 <button type="button" onclick="adminLogout()" style="background: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; padding: 6px 12px; border-radius: 6px; font-size: 12px; font-weight: bold; cursor: pointer;">🔒 Logout</button>
+            </div>
+        </div>
+
+        <!-- Live Visual Analytics Bar -->
+        <div class="analytics-container">
+            <div class="analytic-card">
+                <div style="display: flex; justify-content: space-between; font-size: 13px; font-weight: 600; color: #1e293b;">
+                    <span>Resolution Efficiency</span>
+                    <span id="statResolutionPercent">0%</span>
+                </div>
+                <div class="progress-bar-bg">
+                    <div id="resolutionProgressBar" class="progress-bar-fill"></div>
+                </div>
+                <small style="color: #64748b; font-size: 11px; margin-top: 4px; display: block;" id="statResolutionSubtitle">Resolved vs Total</small>
+            </div>
+
+            <div class="analytic-card">
+                <div style="font-size: 13px; font-weight: 600; color: #1e293b; margin-bottom: 6px;">Top Recurring Issues</div>
+                <div id="statTopCategories" style="font-size: 12px; color: #475569; display: flex; gap: 8px; flex-wrap: wrap;">Loading categories...</div>
             </div>
         </div>
 
@@ -308,29 +379,11 @@
         </div>
     </div>
 
-    <!-- Interactive Cluster / Similar List Modal -->
-    <div id="clusterModal" class="modal">
-        <div class="modal-content" style="max-width: 550px;">
-            <span class="close-btn" onclick="closeClusterModal()">&times;</span>
-            <h3 id="clusterModalTitle" style="margin-top: 0; color: #0f172a;">Related Reports</h3>
-            <p id="clusterModalSubtitle" style="color: #64748b; font-size: 13px;"></p>
-            <div id="clusterModalList" style="margin-top: 15px; display: flex; flex-direction: column; gap: 10px;"></div>
-        </div>
-    </div>
-
-    <!-- Fullscreen Zoom Lightbox -->
-    <div id="lightboxOverlay" class="lightbox-overlay" onclick="closeLightboxOnBackdrop(event)">
-        <span class="lightbox-close" onclick="closeLightbox()">&times;</span>
-        <img id="lightboxImage" class="lightbox-img" src="" alt="Full Zoom Preview">
-        <div class="lightbox-controls">
-            <button class="zoom-btn" onclick="adjustZoom(0.25)">➕ Zoom In</button>
-            <button class="zoom-btn" onclick="adjustZoom(-0.25)">➖ Zoom Out</button>
-            <button class="zoom-btn" onclick="resetZoom()">🔄 Reset</button>
-        </div>
-    </div>
-
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore-compat.js"></script>
-    <script src="script.js"></script>
-</body>
-</html>
+    <!-- Resolve Modal (For Before vs After Resolution Photo Upload) -->
+    <div id="resolveModal" class="modal">
+        <div class="modal-content" style="max-width: 480px;">
+            <span class="close-btn" onclick="closeResolveModal()">&times;</span>
+            <h3 style="margin-top: 0; color: #16a34a;">Mark Grievance as Resolved</h3>
+            <p style="font-size: 13px; color: #64748b;">Upload a verified photo of the completed work (After Solution proof):</p>
+            
+            <input type="file" id="resolvePhotoInput" accept="image/*" style="margin-bottom: 15px; width: 100%; padding: 8px; border: 1px dashed #cbd5e1; border-
