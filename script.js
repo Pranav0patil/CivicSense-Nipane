@@ -371,7 +371,7 @@ function toggleVoiceInput() {
 
     recognition.onresult = function(event) {
         const speechResult = event.results[0][0].transcript;
-        descInput.value = descInput.value ? `${descInput.value}${speechResult}` : speechResult;
+        descInput.value = descInput.value ? `${descInput.value} ${speechResult}` : speechResult;
         triggerAiAnalysis();
     };
 
@@ -486,4 +486,245 @@ function changeLanguage(lang) {
         adminTitle.innerHTML = `
             <svg width="26" height="26" viewBox="0 0 120 120">
                 <rect width="120" height="120" rx="28" fill="#2563eb"/>
-                <path d="M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26
+                <path d="M60 26C45.64 26 34 37.64 34 52C34 71.5 60 94 60 94C60 94 86 71.5 86 52C86 37.64 74.36 26 60 26Z" fill="#ffffff"/>
+                <circle cx="60" cy="52" r="12" fill="#2563eb"/>
+                <circle cx="60" cy="52" r="6" fill="#38bdf8"/>
+            </svg>
+            ${t.adminTitle}
+        `;
+    }
+    if (adminSubtitle) adminSubtitle.innerText = t.adminSubtitle;
+    if (linkPublic) linkPublic.innerText = t.openPublic;
+    if (lblGroup) lblGroup.innerText = t.viewModeLabel;
+    if (lblSort) lblSort.innerText = t.sortLabel;
+
+    const groupSelect = document.getElementById("groupBySelect");
+    if (groupSelect) {
+        const gVal = groupSelect.value;
+        groupSelect.options[0].text = t.viewModes.none;
+        groupSelect.options[1].text = t.viewModes.geo;
+        groupSelect.options[2].text = t.viewModes.aiSame;
+        groupSelect.value = gVal;
+    }
+
+    const sortBySelect = document.getElementById("sortBySelect");
+    if (sortBySelect) {
+        const sortVal = sortBySelect.value;
+        sortBySelect.options[0].text = t.sortOptions.newest;
+        sortBySelect.options[1].text = t.sortOptions.oldest;
+        sortBySelect.options[2].text = t.sortOptions.highPriority;
+        sortBySelect.options[3].text = t.sortOptions.lowPriority;
+        sortBySelect.value = sortVal;
+    }
+
+    const pFilter = document.getElementById("priorityFilter");
+    if (pFilter) {
+        const filterVal = pFilter.value;
+        pFilter.options[0].text = t.priorityFilterAll;
+        pFilter.options[1].text = t.priorityFilterHigh;
+        pFilter.options[2].text = t.priorityFilterMed;
+        pFilter.options[3].text = t.priorityFilterLow;
+        pFilter.value = filterVal;
+    }
+
+    const ths = t.tableHeaders;
+    if (document.getElementById("th-id")) document.getElementById("th-id").innerText = ths.id;
+    if (document.getElementById("th-photo")) document.getElementById("th-photo").innerText = ths.photo;
+    if (document.getElementById("th-date")) document.getElementById("th-date").innerText = ths.date;
+    if (document.getElementById("th-desc")) document.getElementById("th-desc").innerText = ths.desc;
+    if (document.getElementById("th-citizen")) document.getElementById("th-citizen").innerText = ths.citizen;
+    if (document.getElementById("th-priority")) document.getElementById("th-priority").innerText = ths.priority;
+    if (document.getElementById("th-cluster")) document.getElementById("th-cluster").innerText = ths.cluster;
+    if (document.getElementById("th-same")) document.getElementById("th-same").innerText = ths.same;
+    if (document.getElementById("th-status")) document.getElementById("th-status").innerText = ths.status;
+    if (document.getElementById("th-action")) document.getElementById("th-action").innerText = ths.action;
+
+    applySortingAndFiltering();
+}
+
+// 1. Navigation
+function switchTab(viewId) {
+    document.querySelectorAll('.view-panel').forEach(el => el.classList.remove('active'));
+    document.querySelectorAll('.nav-btn').forEach(el => el.classList.remove('active'));
+    
+    const targetView = document.getElementById(`view-${viewId}`);
+    if (targetView) targetView.classList.add('active');
+    const activeBtn = document.getElementById(`nav-${viewId}`);
+    if (activeBtn) activeBtn.classList.add('active');
+
+    if (viewId === 'report' && reportMap) {
+        setTimeout(() => { reportMap.invalidateSize(); }, 300);
+    } else if (viewId === 'tracker' && trackerMap) {
+        setTimeout(() => { 
+            trackerMap.invalidateSize();
+            renderTrackerMarkers();
+        }, 300);
+    }
+}
+
+// 2. Maps Setup
+function initMaps() {
+    const reportMapEl = document.getElementById('reportMap');
+    const trackerMapEl = document.getElementById('trackerMap');
+
+    if (reportMapEl) {
+        reportMap = L.map('reportMap').setView([20.8149, 75.3545], 14);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(reportMap);
+
+        reportMap.on('click', (e) => {
+            setReportLocation(e.latlng.lat, e.latlng.lng);
+        });
+    }
+
+    if (trackerMapEl) {
+        trackerMap = L.map('trackerMap').setView([20.8149, 75.3545], 13);
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(trackerMap);
+    }
+}
+
+function setReportLocation(lat, lng) {
+    userLocation.latitude = lat;
+    userLocation.longitude = lng;
+    if (reportMarker) {
+        reportMarker.setLatLng([lat, lng]);
+    } else if (reportMap) {
+        reportMarker = L.marker([lat, lng]).addTo(reportMap);
+    }
+
+    const feedback = document.getElementById('locationFeedback');
+    if (feedback) {
+        feedback.innerText = `Location Pinned: ${lat.toFixed(4)}, ${lng.toFixed(4)}`;
+        feedback.style.color = "#16a34a";
+    }
+    triggerAiAnalysis();
+}
+
+function fetchLiveLocation() {
+    if ("geolocation" in navigator) {
+        navigator.geolocation.getCurrentPosition(pos => {
+            const lat = pos.coords.latitude;
+            const lng = pos.coords.longitude;
+            if (reportMap) reportMap.setView([lat, lng], 16);
+            setReportLocation(lat, lng);
+        }, () => alert("Enable GPS permission or pin spot manually on map."));
+    }
+}
+
+// 3. Photo Selection
+function handlePhotoSelection(inputEl) {
+    if (inputEl.files && inputEl.files[0]) {
+        selectedPhotoFile = inputEl.files[0];
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            document.getElementById('photoPreviewThumb').src = e.target.result;
+            document.getElementById('photoFeedbackBox').style.display = 'flex';
+            document.getElementById('photoFileName').innerText = selectedPhotoFile.name || "Image ready to upload";
+        };
+        reader.readAsDataURL(selectedPhotoFile);
+
+        triggerAiAnalysis();
+    }
+}
+
+// 4. Multi-Factor AI Urgency Engine
+function calculatePriorityScore(category, text, photoAttached) {
+    let score = 20;
+    let reasons = [];
+
+    if (category === "Sewage Overflow" || category === "Street Light") {
+        score += 25;
+        reasons.push("Public health/electrical hazard category");
+    } else if (category === "Road / Pothole") {
+        score += 20;
+        reasons.push("Traffic danger category");
+    }
+
+    const lowerText = (text || "").toLowerCase();
+    let criticalHits = CRITICAL_KEYWORDS.filter(w => lowerText.includes(w));
+    let medHits = MEDIUM_KEYWORDS.filter(w => lowerText.includes(w));
+
+    if (criticalHits.length > 0) {
+        score += 40;
+        reasons.push(`Emergency words: "${criticalHits.slice(0, 3).join(', ')}"`);
+    } else if (medHits.length > 0) {
+        score += 15;
+        reasons.push(`Issue words: "${medHits.slice(0, 3).join(', ')}"`);
+    }
+
+    if (photoAttached) {
+        score += 10;
+        reasons.push("Visual proof verified");
+    }
+
+    score = Math.min(score, 100);
+
+    let level = "LOW";
+    let badgeClass = "p-low";
+    if (score >= 65) {
+        level = "HIGH";
+        badgeClass = "p-high";
+    } else if (score >= 40) {
+        level = "MEDIUM";
+        badgeClass = "p-med";
+    }
+
+    return { score, level, badgeClass, explanation: reasons.join(" • ") || "Routine Grievance" };
+}
+
+function triggerAiAnalysis() {
+    const catEl = document.getElementById("category");
+    const descEl = document.getElementById("description");
+    const badge = document.getElementById("aiPriorityBadge");
+    const exp = document.getElementById("aiExplanation");
+
+    if (!catEl || !descEl || !badge || !exp) return;
+
+    const hasPhoto = selectedPhotoFile !== null;
+    const analysis = calculatePriorityScore(catEl.value, descEl.value, hasPhoto);
+    
+    badge.className = `p-badge ${analysis.badgeClass}`;
+    badge.innerText = `${analysis.level} (Score: ${analysis.score})`;
+    exp.innerText = analysis.explanation;
+}
+
+function getDistanceMeters(lat1, lon1, lat2, lon2) {
+    const R = 6371e3;
+    const φ1 = lat1 * Math.PI / 180;
+    const φ2 = lat2 * Math.PI / 180;
+    const Δφ = (lat2 - lat1) * Math.PI / 180;
+    const Δλ = (lon2 - lon1) * Math.PI / 180;
+    const a = Math.sin(Δφ/2) * Math.sin(Δφ/2) +
+              Math.cos(φ1) * Math.cos(φ2) *
+              Math.sin(Δλ/2) * Math.sin(Δλ/2);
+    return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+function calculateSimilarity(text1, text2) {
+    if (!text1 || !text2) return 0;
+    const words1 = text1.toLowerCase().replace(/[^\w\s\u0900-\u097F]/gi, '').split(/\s+/).filter(w => w.length > 2);
+    const words2 = text2.toLowerCase().replace(/[^\w\s\u0900-\u097F]/gi, '').split(/\s+/).filter(w => w.length > 2);
+    if (words1.length === 0 || words2.length === 0) return 0;
+
+    const set1 = new Set(words1);
+    const common = words2.filter(w => set1.has(w));
+    return (2.0 * common.length) / (words1.length + words2.length);
+}
+
+// 5. Image Compression
+function compressPhoto(file) {
+    return new Promise((resolve) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onload = (e) => {
+            const img = new Image();
+            img.src = e.target.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const maxWidth = 750;
+                const scale = maxWidth / img.width;
+                canvas.width = (img.width > maxWidth) ? maxWidth : img.width;
+                canvas.height = (img.width > maxWidth) ? (img.height * scale) : img.height;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                resolve(canvas.toDataURL('image/jpeg', 0.65));
