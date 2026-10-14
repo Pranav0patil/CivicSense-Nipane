@@ -22,7 +22,7 @@ let selectedPhotoFile = null;
 let activeResolveReportId = null;
 
 // Fixed Security PIN for Admin Console
-const ADMIN_SECURITY_PIN = "2486";
+const ADMIN_SECURITY_PIN = "9988";
 
 // Speech Recognition Engine (Voice-to-Text)
 let recognition = null;
